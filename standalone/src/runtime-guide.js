@@ -41,7 +41,7 @@ window.AURA_CONNECT=function(options){
   ].map(([title,description,hash,label])=>`<div class="card"><h2>${title}</h2><p>${description}</p><a class="button secondary sectiongap" href="#${hash}">${label}</a></div>`).join('')}</div><div class="hint"><h3>Equipe e acesso são coisas diferentes</h3><p>Adicionar uma pessoa à equipe identifica quem atende. Para ela entrar no sistema, cada conta precisa ser autorizada na plataforma e vinculada à clínica. Remover da equipe não apaga o histórico nem revoga esse acesso.</p></div>`;
   $('#reopenStart').onclick=()=>{progress.step=0;remember();location.hash='comecar'};
  }
- if(!pages.some(p=>p[0]==='ajuda'))pages.push(['ajuda','?','Como usar']);
+ if(!pages.some(p=>p[0]==='ajuda'))pages.push(['ajuda',uiIcon('help'),'Como usar']);
  const oldRouteGuide=route;
  window.removeEventListener('hashchange',oldRouteGuide);
  route=function(){const hash=location.hash.slice(1);if(hash==='ajuda'||hash==='comecar'){

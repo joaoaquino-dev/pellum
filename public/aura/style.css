@@ -10,3 +10,5 @@ html{overflow-x:hidden}main,.content,.grid>*{min-width:0}button,.button,nav a{mi
 nav a b:has(svg){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}nav a b svg{display:block;width:18px;height:18px}
 
 .field input[type=checkbox]{width:18px;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--green);flex-shrink:0}.field:has(input[type=checkbox])>span{display:flex;align-items:flex-start;gap:10px;line-height:1.5}
+
+.ui-icon{display:inline-block;flex-shrink:0;vertical-align:middle}.textbtn:has(.ui-icon),.button:has(.ui-icon){display:inline-flex;align-items:center;gap:8px}.stat .symbol .ui-icon{width:22px;height:22px}

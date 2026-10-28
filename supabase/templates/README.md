@@ -19,3 +19,5 @@ Official references:
 - https://supabase.com/docs/guides/auth/auth-smtp
 - https://supabase.com/docs/guides/auth/auth-email-templates
 - https://supabase.com/docs/guides/auth/sessions/pkce-flow
+
+Follow-up verification (2026-10-28): SMTP is still disabled, no email-provider integration is installed in the Vercel team, and the user confirmed having no domain or SMTP service yet. Templates remain prepared only. See docs/CLINIC-DELETION-AND-SVG-2026-10-28.md.
