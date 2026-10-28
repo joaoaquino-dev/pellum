@@ -23,6 +23,10 @@ A Data API só oferece leitura das tabelas de acordo com RLS. Operações de esc
 
 `tests/supabase-access.sql` testa isolamento, RLS, edição concorrente, backup/restauração, convites/revogação e bloqueio anônimo em uma transação com rollback. Não é teste de entrega de e-mail nem de navegador autenticado. Advisors de segurança e performance consultados após criar o schema: sem alertas.
 
-O modelo de snapshot mantém compatibilidade com os fluxos existentes. Ainda não é a modelagem relacional final para escalar o SaaS. Há limite de 3 MB por salvamento. O frontend usa handlers inline herdados; a CSP permite `unsafe-inline` para scripts enquanto essa camada não for refatorada. Não permite `unsafe-eval`, não carrega código de CDN e limita conexões ao Supabase do projeto.
+O modelo de snapshot mantém compatibilidade com os fluxos existentes. Ainda não é a modelagem relacional final para escalar o SaaS. Há limite de 3 MB por salvamento. O build independente remove handlers de script inline e usa um dispatcher com lista fixa de comandos, sem eval. CSP de scripts é somente self; estilos inline ainda são permitidos. Consulte security/REVIEW-2026-10-28.md para o estado validado e pendências.
 
 Migração inicial aplicada e registrada no Supabase: `20261028152705_aura_initial`. O guard torna a aplicação segura no projeto já provisionado; futuras mudanças devem usar novas migrações. Não modificar migrações já aplicadas.
+
+## Revisão de segurança
+
+Licenças, MFA administrativo, sessões vivas, idempotência e validação de negócio foram aplicados no Supabase de desenvolvimento pela migração 20261028161248. Nenhum administrador real foi provisionado; novas contas ficam pendentes. A publicação continua bloqueada para dados reais pelas pendências documentadas em `security/REVIEW-2026-10-28.md`. A migração adicional de resource_limits é rascunho não aplicado.

@@ -1,3 +1,5 @@
+> **Antes de usar dados reais:** leia [a revisão de segurança](security/REVIEW-2026-10-28.md). A nova versão não foi publicada nem aprovada para dados reais. A árvore antiga tem alertas de dependências e não deve ser republicada.
+
 # Aura · Gestão estética
 
 Private beta for clinic scheduling, product costs, stock, patient contacts and partnership accounting.
