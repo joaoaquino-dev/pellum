@@ -1,9 +1,10 @@
+import * as teamModel from './team-model.js';
 import {wireAccountNavigation} from './account-navigation.js';
 import {newUuid} from './uuid.js';
 import {setupSecurityUI} from './security-ui.js';
 import {installActions} from './actions.js';
 import {createClient} from '@supabase/supabase-js';
-installActions();globalThis.AURA_UUID=newUuid;
+installActions();globalThis.AURA_UUID=newUuid;globalThis.AURA_TEAM_MODEL=teamModel;
 const sb=createClient(AURA_SUPABASE_URL,AURA_SUPABASE_KEY,{auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=s=>document.querySelector(s),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let loaded=false,mode=new URL(location.href).searchParams.get('mode')==='recovery'?'update':'login';

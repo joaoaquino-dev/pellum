@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {activeProfessionalIds,recordProfessionalIds,professionalNames,checkArchive} from '../standalone/src/team-model.js';
+const s={names:['Primeira','Segunda','Terceira'],inactivePros:[1],appointments:[],products:[]};
+assert.deepEqual(activeProfessionalIds(s),[0,2]);
+assert.deepEqual(recordProfessionalIds({}),[0,1]);
+assert.deepEqual(professionalNames(s,{professionalIds:[2]}),['Terceira']);
+assert.deepEqual(professionalNames(s,{professionalIds:[2],professionalNames:['Nome histórico']}),['Nome histórico']);
+assert.equal(checkArchive(s,2,'2026-10-28'),null);
+assert.match(checkArchive({...s,inactivePros:[0,1]},2,'2026-10-28'),/pelo menos uma/);
+assert.match(checkArchive({...s,appointments:[{pro:2,date:'2026-10-29',status:'Confirmado'}]},2,'2026-10-28'),/agendamentos futuros/);
+assert.equal(checkArchive({...s,appointments:[{pro:2,date:'2026-10-29',status:'Cancelado'}]},2,'2026-10-28'),null);
+assert.match(checkArchive({...s,products:[{owner:2,balance:5}]},2,'2026-10-28'),/estoque/);
+console.log('PASS: active IDs remain stable; individual and legacy records resolve correctly; archival preserves history and blocks last professional, future appointments and remaining stock.');
