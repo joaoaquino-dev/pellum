@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-Este repositório contém a versão piloto publicada da Aura. A autenticação atual depende do ChatGPT e a persistência usa Cloudflare D1. A integração com Supabase ainda não foi implementada.
+Este repositório contém a versão piloto publicada da Aura. A autenticação atual depende do ChatGPT e a persistência usa Cloudflare D1. A branch `feat/supabase-login` acrescenta uma versão independente com Supabase. O schema já foi aplicado no projeto `aura`; os testes de RLS e RPC passaram. Publicação externa, URLs de retorno e envio de e-mails ainda precisam de validação. Nenhum dado D1 foi transferido automaticamente.
 
 ## Plano de migração
 
