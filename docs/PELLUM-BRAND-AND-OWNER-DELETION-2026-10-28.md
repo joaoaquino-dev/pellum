@@ -29,3 +29,9 @@ SMTP próprio/templates da Pellum ainda não ativados. Backups externos/restaura
 ## Endereços
 
 `pellum-piloto.vercel.app` adicionado e verificado na Vercel após autorização explícita. `pellum.vercel.app` indisponível (409 owned-on-other-team). A alternativa `usepellum.vercel.app` foi bloqueada pela revisão automática e ainda aguarda autorização específica. Não tentar contornar o bloqueio. Até decidir o endereço final, a configuração de retorno do Auth preserva o endereço atual.
+
+## Verificação da publicação
+
+Vercel READY: `dpl_DnKaSJMpdTGwb9bu7CkyyahfAyT7`, commit `4de87c6657d7854a0b98cfe2c5d71aa33eb2c64b`. GitHub conectado corretamente ao repositório renomeado `pellum`. `main.js`, `runtime.js` e `style.css` servidos pelo endereço anterior conferem byte a byte com o build local. `https://pellum-piloto.vercel.app/` abriu a tela de login Pellum no navegador. Os retornos exatos `/` e `/?mode=recovery` desse endereço foram adicionados no Supabase, preservando os dois retornos anteriores; sem wildcard. Site URL padrão permanece no endereço anterior até definir o endereço sem “piloto”. É necessário entrar novamente ao trocar de origem. Cadastro e entrega de e-mail real não foram revalidados.
+
+Para reproduzir a suíte SQL: `python tests/build-platform-security-test.py` gera o script com BEGIN/ROLLBACK para executar em ambiente de teste. Os 102 asserts também foram executados após a migração aplicada, sem encenar exclusão de usuários reais.
