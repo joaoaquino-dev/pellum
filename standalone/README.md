@@ -1,6 +1,6 @@
-# Aura independente · Supabase
+# Pellum independente · Supabase
 
-Frontend estático que reutiliza as telas da Aura e conecta login e dados ao projeto Supabase. A versão publicada anteriormente, com ChatGPT/D1, permanece separada.
+Frontend estático que reutiliza as telas da Pellum e conecta login e dados ao projeto Supabase. A versão publicada anteriormente, com ChatGPT/D1, permanece separada.
 
 ## Desenvolvimento e publicação
 
@@ -14,7 +14,7 @@ Na Vercel, importe o repositório e selecione a branch de migração, Root Direc
 2. No Supabase, configurar Auth > URL Configuration: Site URL para a URL publicada; Redirect URLs para `/` e `/?mode=recovery` na mesma origem. Não adicionar curingas amplos.
 3. Conferir o provedor de e-mail, confirmação de e-mail habilitada e política de senha. O frontend exige 12 caracteres. Configurar SMTP de produção para confirmação/recuperação de senha; o envio padrão do Supabase tem restrições para testes.
 4. Validar cadastro, confirmação, login, logout e recuperação de senha com uma conta real controlada pelo proprietário.
-5. Testar duas contas e dois dispositivos na mesma clínica. Autorizar o e-mail da outra profissional em Configurações. Ela entra com conta Aura, sem conta ChatGPT.
+5. Testar duas contas e dois dispositivos na mesma clínica. Autorizar o e-mail da outra profissional em Configurações. Ela entra com conta Pellum, sem conta ChatGPT.
 6. Planejar exportação/importação dos dados D1 antes da troca principal. Nenhum registro D1 foi copiado automaticamente; não criar clínicas reais de teste para simular uma migração concluída.
 
 ## Segurança e verificação
