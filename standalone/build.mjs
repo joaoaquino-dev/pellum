@@ -18,3 +18,6 @@ await copyFile('../public/aura/style.css','dist/style.css');
 for(const f of ['favicon.svg','favicon-32.png','apple-touch-icon.png'])await copyFile('assets/'+f,'dist/'+f);
 await writeFile('dist/_headers',"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' "+config.url+"; frame-ancestors 'none'; base-uri 'self'; form-action 'self'\n  Cache-Control: no-cache\n");
 console.log('Pellum independente gerada em standalone/dist');
+
+await mkdir('dist/conheca',{recursive:true});
+for(const f of ['index.html','landing.css','landing.js'])await copyFile('landing/'+f,'dist/conheca/'+f);
