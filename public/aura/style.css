@@ -14,3 +14,5 @@ nav a b:has(svg){display:inline-flex;align-items:center;justify-content:center;f
 .ui-icon{display:inline-block;flex-shrink:0;vertical-align:middle}.textbtn:has(.ui-icon),.button:has(.ui-icon){display:inline-flex;align-items:center;gap:8px}.stat .symbol .ui-icon{width:22px;height:22px}
 
 #confirmProductDelete{color:#fff}
+
+.workspace-mark{display:block;flex:0 0 42px;width:42px;height:42px;border-radius:12px;box-shadow:0 4px 10px #345e4d18}.workspace>div{min-width:0;overflow-wrap:anywhere}
