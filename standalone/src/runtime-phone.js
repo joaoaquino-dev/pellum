@@ -12,8 +12,12 @@ window.AURA_CONNECT=function(options){
  const priorCreate=patientForm;patientForm=function(){priorCreate();bindPhone($('#patientform'))};
  const priorEdit=window.editPatient;window.editPatient=id=>{priorEdit(id);bindPhone($('#editPatientForm'))};
  const priorList=patientsList;patientsList=function(){priorList();const removed=$('#showRemoved')?.checked;const ps=state.patients.filter(p=>!!p.deleted===!!removed&&p.name.toLowerCase().includes($('#patientSearch').value.toLowerCase()));
-  $('#patientsList').querySelectorAll('tbody tr').forEach((row,i)=>{const p=ps[i];if(!p||removed)return;const url=phone.whatsappURL(p.phone);if(!url)return;
-   row.lastElementChild.insertAdjacentHTML('afterbegin',`<a class="button secondary" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de ${esc(p.name)}"><svg class="ui-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.8 7.4L3 21l1.8-5.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 7c0 5 4 8 8 9l1-3-3-1-1 1-3-3 1-1-1-2Z"/></svg>WhatsApp</a> `);
+  const table=$('#patientsList table');if(table){table.classList.add('patient-table');table.parentElement.classList.add('patient-tablewrap')}
+  $('#patientsList').querySelectorAll('tbody tr').forEach((row,i)=>{const p=ps[i];if(!p)return;const url=!removed&&phone.whatsappURL(p.phone);if(url){
+   row.lastElementChild.insertAdjacentHTML('afterbegin',`<a class="button secondary" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de ${esc(p.name)}"><svg class="ui-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.8 7.4L3 21l1.8-5.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 7c0 5 4 8 8 9l1-3-3-1-1 1-3-3 1-1-1-2Z"/></svg>WhatsApp</a> `);}
+   const cells=Array.from(row.children);if(p.phone&&phone.validPhone(p.phone))cells[1].textContent=phone.formatPhone(p.phone);
+   cells.forEach((cell,n)=>cell.dataset.label=['Paciente','Contato','Ações'][n]);
+   const group=document.createElement('div');group.className='patient-action-group';group.append(...Array.from(row.lastElementChild.childNodes));row.lastElementChild.append(group);
   });
  };
  if(page==='pacientes')patientsList();
