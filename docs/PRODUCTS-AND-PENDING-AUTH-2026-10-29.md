@@ -31,3 +31,7 @@ Backup externo com restauração isolada, validação real com as profissionais,
 ## Continuação após autorização
 
 O usuário confirmou explicitamente o envio de código, testes e SQL ao repositório privado `joaoaquino-dev/pellum` e a publicação na Vercel. O GitHub aceitou a criação da árvore após essa confirmação. A mudança de MFA continua bloqueada no Supabase, conforme o registro acima. A interface de exclusão da clínica mantém a exigência atual até o servidor ser alterado; produtos e insumos não exigem MFA adicional.
+
+## Publicação verificada
+
+Código enviado no commit `80fd8487854d29fa464e3669f527561d935f4e9c`, branch `security/application-review`. Deployment Vercel `dpl_5efwn5wQdNizpSDMVWVJir7kqxcW`: READY, sem erro de aliases. O endereço `https://pellum-piloto.vercel.app/` serve a atualização com `window.editProduct` e `window.removeProduct`. A política anterior de MFA foi verificada como ainda presente; a proteção administrativa também permanece.
