@@ -1,0 +1,15 @@
+{
+  "scope": "standalone production build",
+  "audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "packages": {
+    "@supabase/supabase-js": "2.118.0",
+    "esbuild": "0.28.2"
+  }
+}
