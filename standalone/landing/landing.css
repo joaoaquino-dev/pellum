@@ -2,3 +2,8 @@
 
 /* Vector icons keep the same appearance across iOS, Android and desktop. */
 .icon{display:inline-block;width:20px;height:20px;flex-shrink:0;vertical-align:middle}.button>span,.login>span,.text-link>span,.mobile-cta>span,.check{display:inline-flex;align-items:center}.metric-icon{display:grid;place-items:center;width:44px;height:44px;padding:0;flex-shrink:0}.metric-icon .icon{width:22px;height:22px}.floating-note>span{display:inline-flex;flex-shrink:0}.floating-note .icon{width:26px;height:26px}.feature-strip b{display:inline-flex;align-items:center}.feature-strip .icon{width:13px;height:13px}.contact .icon,.footer-links .icon{width:16px;height:16px;margin-left:6px}
+
+/* Keep the existing composition usable at narrow widths and reduced motion. */
+.demo-tabs{flex-wrap:wrap}
+@media(max-width:374px){.site-header{padding-inline:16px;gap:12px}.login{gap:12px;padding-inline:12px}.demo-tabs button{padding-inline:13px}.window-content{padding:18px}.metric-row{gap:12px;flex-wrap:wrap}.hero h1{font-size:38px}.floating-note{left:12px;right:12px;padding:14px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.button:hover{transform:none}}
