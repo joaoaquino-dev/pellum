@@ -41,3 +41,83 @@ nav a b:has(svg){display:inline-flex;align-items:center;justify-content:center;f
 }
 
 .procedure-catalog{scroll-margin-top:20px}.procedure-catalog>p{margin-top:10px}.procedure-add{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:24px 0}.procedure-add .field{flex:1 1 240px;margin:0}.procedure-add>button{min-height:46px}.procedure-list-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:24px 0 8px}.procedure-list-head h3{margin:0}.procedure-list-head .field{margin:0;flex:0 1 300px}.procedure-item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}.procedure-item>span{min-width:0;overflow-wrap:anywhere;line-height:1.5}.procedure-item>button{flex-shrink:0;min-height:44px}.procedure-catalog summary{cursor:pointer;min-height:44px;padding:12px 0}.procedure-catalog details>p{margin-bottom:12px}#confirmProcedureDelete{color:#fff}@media(max-width:767px){.procedure-add>button{width:100%}.procedure-list-head .field{flex-basis:100%}}
+
+/* Shared refinements: retain the Pellum palette, typefaces and component shapes. */
+:root{--muted:#5f7167}
+body{line-height:1.5}
+h1{line-height:1.18;overflow-wrap:anywhere}
+h2,h3{line-height:1.4}
+small{font-size:12px;line-height:1.6}
+.heading p{max-width:68ch}
+.heading{margin-bottom:22px}
+.heading>div,.row>.left,.row>.left>div{min-width:0}
+.row>.left{overflow-wrap:anywhere}
+.cardhead{margin-bottom:18px}
+.cardhead h2{overflow-wrap:anywhere}
+.stat label,.stat small{font-size:12px}
+.stat strong{font-variant-numeric:tabular-nums}
+.eyebrow{color:var(--muted)}
+button,.button{line-height:1.4;transition:background-color .15s,border-color .15s}
+button:disabled{cursor:wait;opacity:.6}
+@media(hover:hover){button:not(:disabled):hover,.button:hover{filter:brightness(.96)}.secondary:hover{border-color:#91a99a}.textbtn:hover{background:var(--light)}}
+:where(button,a,input,select,summary):focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.result :where(button,a,input,select):focus-visible{outline-color:var(--gold)}
+input:disabled,select:disabled{background:var(--bg);color:var(--muted);cursor:not-allowed}
+input[readonly]{background:var(--bg)}
+.field:has(input[type=checkbox]){min-height:44px;display:flex;align-items:center}
+label.field{line-height:1.5}
+.toolbar input[type=search],.toolbar input:not([type]){flex:1 1 220px}
+th{font-size:11px;line-height:1.5}
+td{vertical-align:top;line-height:1.6;overflow-wrap:anywhere}
+td>button,td>a.button{margin:4px 6px 4px 0}
+.mobile-cell-label{display:none}
+.empty{font-size:14px;line-height:1.65;padding:26px 16px}
+dialog{max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:20px}
+dialog h2{overflow-wrap:anywhere;line-height:1.25}
+body:has(dialog[open]){overflow:hidden}
+.dialog-toast{position:static;padding:12px 14px;border:1px solid var(--line);border-radius:7px;background:var(--light);color:var(--ink);font-size:14px;box-shadow:0 -3px 10px #283d3608}
+#toast{max-width:calc(100vw - 24px);width:max-content;overflow-wrap:anywhere;font-size:14px;line-height:1.5;bottom:max(16px,env(safe-area-inset-bottom))}
+.skip-link{position:fixed;top:8px;left:8px;transform:translateY(-150%);z-index:20;background:var(--green);color:white;border-radius:7px;padding:12px 16px}
+.skip-link:focus{transform:none}
+@media(max-width:767px){
+  .notice{margin-bottom:18px;letter-spacing:0;overflow-wrap:anywhere}
+  .notice span{font-size:12px;line-height:1.5}
+  .content{padding:18px 12px 32px}
+  .heading{gap:14px;margin-bottom:20px}
+  .heading p{font-size:14px}
+  .card{padding:16px}
+  .stats{margin:18px 0}
+  .stat strong{font-size:clamp(20px,5.6vw,24px);letter-spacing:-.5px;margin:12px 0 8px}
+  .stat label{display:block;line-height:1.4}
+  .stat small{font-size:11px;line-height:1.5}
+  .grid{gap:16px;margin:16px 0}
+  .formgrid{gap:0}
+  .calendar-card{padding:12px}
+  .calendar-controls h2{flex-basis:100%;margin-bottom:4px}
+  .calendar-controls{margin-bottom:14px}
+  .calendar-legend{flex-wrap:wrap;font-size:11px}
+  .legend{flex-wrap:wrap;gap:8px 16px;font-size:11px}
+  .cardhead{align-items:flex-start;flex-wrap:wrap;gap:8px}
+  .toolbar>input,.toolbar>select{width:100%;flex:1 1 100%;min-width:0}
+  .responsive-table,.responsive-table tbody,.responsive-table tr,.responsive-table td{display:block;width:100%}
+  .tablewrap .responsive-table{min-width:0}
+  .responsive-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .responsive-table tbody{display:grid;gap:16px}
+  .responsive-table tbody tr{border-bottom:1px solid var(--line);padding-bottom:16px}
+  .responsive-table tbody tr:last-child{border-bottom:0;padding-bottom:0}
+  .responsive-table td{border:0;padding:7px 0}
+  .responsive-table td:first-child{font-size:14px;font-weight:600}
+  .responsive-table td small{font-weight:400}
+  .mobile-cell-label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:3px}
+  .responsive-table .table-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-top:12px}
+  .responsive-table .table-actions>.mobile-cell-label{flex-basis:100%}
+  .responsive-table .table-actions>button,.responsive-table .table-actions>a.button{margin:0;flex:1 1 120px}
+  .responsive-table .table-actions>small{flex-basis:100%}
+  .patient-tablewrap .patient-table{min-width:0}
+  dialog{padding:20px 16px;width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
+  .auth-shell{min-height:80svh;padding:16px 0}
+  .auth-card{padding:24px 20px}
+  .auth-card .brand{margin-bottom:26px}
+  .auth-card .toolbar{gap:8px;margin:18px 0}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
