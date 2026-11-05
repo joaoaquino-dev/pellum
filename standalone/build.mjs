@@ -13,7 +13,7 @@ let legacy=await readFile('../public/aura/app.js','utf8');
 // Fail closed when the legacy bootstrap changes.
 const start=legacy.indexOf('let state;try{'),end=legacy.indexOf("let page='inicio';",start);if(start<0||end<0)throw Error('Bootstrap do aplicativo não encontrado');legacy=legacy.slice(0,start)+'let state=window.AURA_DATA;'+legacy.slice(end);
 legacy+='\n'+await readFile('../public/aura/features.js','utf8')+'\n'+await readFile('src/runtime-security.js','utf8')+'\n'+await readFile('src/runtime-team.js','utf8')+'\n'+await readFile('src/runtime-guide.js','utf8')+'\n'+await readFile('src/runtime-catalog.js','utf8')+'\n'+await readFile('src/runtime-products.js','utf8')+'\n'+await readFile('src/runtime-phone.js','utf8')+'\n'+await readFile('src/runtime-alerts.js','utf8')+'\nwindow.AURA_CONNECT({api:window.AURA_API,cloud:window.AURA_CLOUD});\nwindow.AURA_READY();';legacy=legacy.replace(/(\s)on(click|change|input|submit)=/g,'$1data-on$2=');await writeFile('dist/runtime.js',rebrand(legacy));
-let html=await readFile('../public/aura/index.html','utf8');html=html.replace('/aura/style.css','/style.css').replace('/aura/cloud.js','/main.js');html=html.replace('<head>',`<head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${config.url}; base-uri 'self'; form-action 'self'">`);await writeFile('dist/index.html',rebrand(html));
+let html=await readFile('../public/aura/index.html','utf8');html=html.replace('/aura/style.css','/style.css').replace('/aura/cloud.js','/main.js');html=html.replace('<head>', '<head><meta name="robots" content="noindex, nofollow">');html=html.replace('<head>',`<head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${config.url}; base-uri 'self'; form-action 'self'">`);await writeFile('dist/index.html',rebrand(html));
 await copyFile('../public/aura/style.css','dist/style.css');
 for(const f of ['favicon.svg','favicon-32.png','apple-touch-icon.png'])await copyFile('assets/'+f,'dist/'+f);
 await writeFile('dist/_headers',"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' "+config.url+"; frame-ancestors 'none'; base-uri 'self'; form-action 'self'\n  Cache-Control: no-cache\n");
@@ -21,3 +21,9 @@ console.log('Pellum independente gerada em standalone/dist');
 
 await mkdir('dist/conheca',{recursive:true});
 for(const f of ['index.html','landing.css','landing.js'])await copyFile('landing/'+f,'dist/conheca/'+f);
+
+// Public discovery only: the authenticated application never enters the sitemap.
+await writeFile('dist/robots.txt','User-agent: *\nAllow: /\nSitemap: https://usepellum.vercel.app/sitemap.xml\n');
+await writeFile('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://usepellum.vercel.app/conheca/</loc></url></urlset>');
+await copyFile('landing/404.html','dist/404.html');
+await copyFile('assets/social-card.png','dist/social-card.png');

@@ -15,6 +15,11 @@
     "result": "PASS"
   },
   {
+    "check": "private_schema",
+    "http_status": 406,
+    "result": "PASS"
+  },
+  {
     "check": "storage_bucket_listing",
     "http_status": 200,
     "result": "PASS"
