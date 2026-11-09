@@ -30,7 +30,7 @@ Fontes consultadas em 09/11: [Supabase](https://supabase.com/pricing), [Vercel](
 
 ## Estrutura local preparada
 
-supabase/config.toml define projeto local exclusivo, PostgreSQL 17, confirmação de e-mail, TOTP e caixa local, sem segredos ou seed automático. A CLI usada para scaffolding foi 2.58.5. Validar a versão escolhida e instalar o Docker/runtime necessário antes de iniciar: o stack Auth/Storage não foi iniciado nesta máquina.
+supabase/config.toml define projeto local exclusivo, PostgreSQL 17, confirmação de e-mail, TOTP e caixa local, sem segredos ou seed automático. A CLI 2.58.5 aceitou a configuração ao consultar status local, mas o Docker necessário estava indisponível; o stack Auth/Storage não foi iniciado. Nenhuma credencial retornada por comandos de status foi exibida ou salva.
 
 Consultar --help antes de start/reset e usar destino local explícito. Não executar db push/reset vinculado remotamente. O frontend local usa origem http://127.0.0.1:3000 e configuração publicável do próprio stack, fornecida pelo ambiente.
 

@@ -4,6 +4,7 @@ Executar da raiz do repositório. Dependências opcionais de QA estão separadas
 
 ```powershell
 npm ci --prefix standalone --workspaces=false
+npm ci --prefix clinical-server --workspaces=false
 npm ci --prefix tests/clinical --workspaces=false
 npm --prefix standalone run build
 Get-ChildItem tests -Filter '*.mjs' -File | ForEach-Object {
@@ -22,3 +23,11 @@ PGlite executa PostgreSQL em memória com a migration clínica real e funções 
 O navegador exercita o runtime compilado e a camada clínica via HTTP local para esse banco. Confirmações, autenticação inicial e entrega de e-mail são controladas no teste. Não certifica SMTP, MFA remoto, Storage, assinatura, iOS/Safari ou todos os módulos legados. Capturas fictícias ficam em `.codex/clinical-qa/`, ignoradas pelo Git.
 
 A suite não aceita URL de banco remoto e não executa fixtures no projeto conectado. A configuração de desenvolvimento usa loopback por padrão. Resultado registrado em docs/CLINICAL-IMPLEMENTATION-2026-11-09.md.
+
+## Fase 2
+
+Preferir Node 24. Com as três instalações acima, `node scripts/verify-phase2.mjs` executa build local, todos os arquivos tests/*.mjs, sintaxe e auditorias npm. O relatório local fica em outputs/phase2-verification.json. Não há deploy, link de projeto ou SQL remoto nesse comando.
+
+O navegador clínico agora inclui galeria/slider, recuperação de upload pendente, fontes documentais e navegação nas oito áreas existentes. As fixtures de Auth, antivírus e transporte do Storage continuam identificadas como doubles; o handler, os decoders e PostgreSQL são reais locais. O teste separado da tela de autenticação substitui explicitamente o SDK para verificar interface/redirecionamentos, sem comprovar entrega de e-mail.
+
+Os testes de documentos não geram assinatura real. O exercício de recuperação criptografada não restaura produção nem serviço externo. Relatório atual e matriz de aceite: docs/PHASE2-REPORT-2026-11-09.md; o relatório anterior permanece como registro da Fase 1.

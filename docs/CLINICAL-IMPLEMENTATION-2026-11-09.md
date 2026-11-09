@@ -1,5 +1,7 @@
 # Pellum — relatório de implementação clínica
 
+Registro da Fase 1, preservado como histórico. Para o estado posterior de fotos, documentos e hardening, consultar [PHASE2-REPORT-2026-11-09.md](PHASE2-REPORT-2026-11-09.md).
+
 09/11/2026, America/Sao_Paulo. Trabalho local na branch feat/clinical-records, sobre a transferência derivada de produção. **Não liberado para operação clínica comercial.** Não houve contratação, push, merge, aplicação de migration remota, publicação ou alteração de dados de produção. A continuidade abaixo atende ao prompt de implementação e à orientação posterior sobre homologação/custos; não muda retroativamente o escopo dos documentos de transferência.
 
 ## 1. Diagnóstico inicial
