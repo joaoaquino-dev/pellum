@@ -5,12 +5,14 @@ import {readFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {randomUUID} from 'node:crypto';
-import {createClinicalTestDatabase} from './clinical-database.mjs';
+import {createMediaFixture} from './clinical/media-fixture.mjs';
+import {createRequire} from 'node:module';
 const tooling=process.env.PELLUM_TEST_TOOLS||path.resolve('tests/clinical/node_modules');
 const {chromium}=await import(pathToFileURL(path.join(tooling,'playwright/index.mjs')).href);
 const {build}=await import('../standalone/node_modules/esbuild/lib/main.js');
-const {db,ids,rpc,login,snapshot}=await createClinicalTestDatabase();
-await rpc('grant',{userId:ids.owner,professionalId:0,profession:'enfermagem',registry:'COREN-QA',write:true,export:true,enabled:true,requestId:randomUUID()});
+const mediaEnv=await createMediaFixture();const {db,ids,rpc,login,snapshot}=mediaEnv;
+const require=createRequire(new URL('../clinical-server/package.json',import.meta.url)),sharp=require('sharp');
+const photoBytes=await sharp({create:{width:100,height:80,channels:3,background:'#345e4d'}}).jpeg().toBuffer();
 const fixture={...snapshot,percent:100,expenses:[],products:[],records:[],appointments:[],patients:snapshot.patients.map(p=>({...p,phone:'',note:''}))};
 const cloud={clinic:{id:ids.clinic,name:'Clínica fictícia de testes',role:'manager',owner_id:ids.owner},user:'owner@example.invalid',revision:0,is_admin:false,members:[],clinics:[{id:ids.clinic,name:'Clínica fictícia'}],data:fixture};
 const entry=`
@@ -23,7 +25,8 @@ const entry=`
  installActions();installInterface();window.AURA_PHONE=phone;window.AURA_TEAM_MODEL=team;window.AURA_CLINIC_ALERTS=clinicAlerts;
  window.AURA_CLOUD=${JSON.stringify(cloud)};window.AURA_DATA=window.AURA_CLOUD.data;
  window.AURA_API=async()=>window.AURA_CLOUD;window.AURA_READY=()=>{};window.AURA_VERIFY_MFA=async()=>{};
- window.AURA_CLINICAL=createClinicalService({rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{});
+ window.mediaToken='owner-aal1';
+ window.AURA_CLINICAL=createClinicalService({auth:{getSession:async()=>({data:{session:{access_token:window.mediaToken}}})},rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{window.mediaToken='owner-aal2'});
  window.AURA_CLINICAL.actorId=${JSON.stringify(ids.owner)};
  const script=document.createElement('script');script.src='/runtime.js';document.body.append(script);
 `;
@@ -31,6 +34,12 @@ const bundled=await build({stdin:{contents:entry,resolveDir:process.cwd(),source
 let failure=null,deny=false,loseSave=false,conflictSave=false;const rpcActions=[];
 const server=createServer(async(req,res)=>{
  try{
+  if(req.url==='/api/clinical-media'){
+   const chunks=[];for await(const chunk of req)chunks.push(chunk);
+   const response=await mediaEnv.handler(new Request('http://127.0.0.1:'+server.address().port+req.url,{method:req.method,headers:req.headers,body:Buffer.concat(chunks)}));
+   res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));return;
+  }
+  if(req.url.startsWith('/__private/')){const stored=mediaEnv.readSigned(req.url);if(!stored){res.writeHead(403).end();return}res.writeHead(200,{'Content-Type':stored.mime,'Cache-Control':'no-store'});res.end(stored.bytes);return}
   if(req.method==='POST'&&req.url==='/__rpc'){
    let raw='';for await(const c of req){raw+=c;if(raw.length>100000)throw Error('Request too big')}
    const b=JSON.parse(raw);rpcActions.push(b.p_action);let data,error;
@@ -47,6 +56,7 @@ const server=createServer(async(req,res)=>{
  }catch(e){failure=e;res.writeHead(500).end('QA failure')}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+mediaEnv.setOrigin('http://127.0.0.1:'+server.address().port);
 const browser=await chromium.launch({headless:true,executablePath:process.env.PELLUM_BROWSER||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
 await mkdir('.codex/clinical-qa',{recursive:true});
 let checks=0;const errors=[];
@@ -85,6 +95,22 @@ try{
  await dialog.getByRole('button',{name:'Consultar histórico sem descartar rascunho',exact:true}).click();await dialog.locator('[data-conflict-history] .clinical-entry').first().waitFor();assert.equal(await dialog.getByRole('button',{name:'Salvar rascunho',exact:true}).isDisabled(),true);checks++;
  await login('owner','aal2');const draftDownloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar rascunho não confirmado',exact:true}).click();const draftDownload=await draftDownloadPromise;const draftExport=JSON.parse(await readFile(await draftDownload.path(),'utf8'));assert.equal(draftExport.unconfirmed,true);assert.equal(draftExport.payload.summary,'Rascunho fictício mantido após conflito');checks++;
  await dialog.getByRole('button',{name:'Voltar',exact:true}).click();await dialog.getByRole('button',{name:'Exportar documento clínico',exact:true}).waitFor();
+ await dialog.getByRole('button',{name:'Fotografias e anexos',exact:true}).click();await dialog.getByRole('heading',{name:'Fotografias e anexos',exact:true}).waitFor();checks++;
+ const upload=dialog.locator('.clinical-media-upload');
+ for(let index=0;index<2;index++){
+  await upload.locator('[name="clinicalFile"]').setInputFiles({name:'foto-ficticia-'+index+'.jpg',mimeType:'image/jpeg',buffer:photoBytes});
+  await upload.locator('[name="region"]').fill('Região fictícia '+index);await upload.locator('[name="clinicalBasis"]').selectOption('care_basis_reviewed');await upload.locator('[name="basisReference"]').fill('Base fictícia para QA');await upload.locator('[name="processingBasisReference"]').fill('Armazenamento fictício para QA');
+  if(index===0)mediaEnv.failNextPut();await upload.getByRole('button',{name:'Validar e enviar arquivo',exact:true}).click();
+  if(index===0){await dialog.getByText(/Repetir o envio recupera/).waitFor();await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();await dialog.getByRole('button',{name:'Fotografias e anexos',exact:true}).click();await dialog.getByRole('button',{name:'Retomar envio pendente',exact:true}).click();await upload.locator('[name="clinicalFile"]').setInputFiles({name:'foto-ficticia-'+index+'.jpg',mimeType:'image/jpeg',buffer:photoBytes});await upload.getByRole('button',{name:'Validar e enviar arquivo',exact:true}).click();checks++}
+  await dialog.getByText('Arquivo validado e salvo. O original permanece privado.',{exact:true}).waitFor();checks++;
+ }
+ await dialog.getByRole('button',{name:'Visualizar fotografia',exact:true}).first().click();await dialog.locator('.clinical-media-card img').first().waitFor();assert.equal(await dialog.locator('.clinical-media-card img').first().evaluate(img=>new Promise(resolve=>{if(img.complete)resolve(img.naturalWidth>0);else img.onload=()=>resolve(img.naturalWidth>0)})),true);checks++;
+ const choices=dialog.getByRole('checkbox',{name:'Selecionar foto para comparação',exact:true});await choices.nth(0).check();await choices.nth(1).check();await dialog.getByRole('button',{name:'Comparar duas fotos selecionadas',exact:true}).click();
+ const comparison=page.getByRole('dialog',{name:'Visualização clínica',exact:true});await comparison.getByRole('slider',{name:'Posição do comparador'}).fill('70');await comparison.screenshot({path:'.codex/clinical-qa/photo-comparison.png'});assert.equal(await comparison.locator('.clinical-photo-pair img').count(),2);checks++;
+ await comparison.getByRole('button',{name:'Fechar visualização'}).click();await page.setViewportSize({width:390,height:844});await dialog.evaluate(el=>el.scrollTop=0);await page.screenshot({path:'.codex/clinical-qa/mobile-photos.png',fullPage:true});assert.equal(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false);checks++;
+ const photoDownloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar original',exact:true}).first().click();const photoDownload=await photoDownloadPromise;assert.equal((await readFile(await photoDownload.path())).equals(photoBytes),true);checks++;
+ await dialog.getByRole('button',{name:'Registrar revogação de divulgação',exact:true}).first().click();await dialog.getByText('Revogação de divulgação registrada. O histórico clínico foi preservado.',{exact:true}).waitFor();checks++;
+ await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();await dialog.getByRole('button',{name:'Exportar documento clínico',exact:true}).waitFor();
  await login('owner','aal2');const downloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar documento clínico',exact:true}).click();const download=await downloadPromise;const exported=await readFile(await download.path(),'utf8');assert.equal(exported.includes('<script>'),false);assert.equal(exported.includes('sem assinatura digital validada'),true);checks++;
  await dialog.getByRole('button',{name:'Fechar prontuário',exact:true}).click();
  await page.locator('[data-clinical-patient="p2"]').click();await dialog.getByText(/Acesso clínico não autorizado/).waitFor();checks++;

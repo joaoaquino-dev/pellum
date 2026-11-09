@@ -1,0 +1,7 @@
+{
+  "name": "pellum-clinical-server",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "dependencies": { "pdf-lib": "1.17.1", "sharp": "0.35.5" }
+}

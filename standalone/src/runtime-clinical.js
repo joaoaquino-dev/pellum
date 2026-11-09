@@ -5,14 +5,14 @@ window.AURA_CONNECT=function(options){
  const model=service.model;
  const dialog=document.createElement('dialog');dialog.id='clinicalDialog';dialog.className='clinical-dialog';
  dialog.setAttribute('aria-labelledby','clinicalTitle');document.body.append(dialog);
- let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null;
+ let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null,mediaView=null;
  const find=s=>dialog.querySelector(s);
  const button=(label,fn,secondary=true)=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(secondary)b.className='secondary';b.onclick=fn;return b};
  const info=text=>{const el=find('#clinicalMessage');if(el)el.textContent=text};
  const safeClose=()=>{
-  if(busy||activeWriter?.state.pending)return info('Aguarde o salvamento antes de fechar.');
+  if(busy||activeWriter?.state.pending||mediaView?.pending)return info('Aguarde o salvamento antes de fechar.');
   if(dirty&&!confirm('Há um rascunho não salvo nesta tela. Fechar e descartar essas alterações?'))return;
-  clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
+  mediaView?.dispose();mediaView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
  };
  dialog.addEventListener('cancel',e=>{e.preventDefault();safeClose()});
  window.addEventListener('beforeunload',e=>{if(dirty||busy||activeWriter?.state.pending){e.preventDefault();e.returnValue=''}});
@@ -39,6 +39,7 @@ window.AURA_CONNECT=function(options){
   const bar=document.createElement('div');bar.className='toolbar clinical-toolbar';
   if(access?.can_write)for(const kind of Object.keys(model.clinicalKinds))bar.append(button('＋ '+model.clinicalKinds[kind],()=>edit(kind),false));
   if(access?.can_write)bar.append(button('Modelos de anamnese',()=>templateEditor()));
+  bar.append(button('Fotografias e anexos',()=>{clearTimeout(timer);epoch++;mediaView=service.mountClinicalMedia({container:find('#clinicalBody'),patient:patientId,entries,access,client:service.mediaClient,onBack:()=>{mediaView=null;reload()},onDirty:value=>dirty=value});info('Fotografias e documentos clínicos com acesso restrito.')}));
   bar.append(button('Gerenciar acesso clínico',manageAccess));
   if(access?.can_export){bar.append(button('Exportar documento clínico',()=>exportChart('html')));bar.append(button('Exportar dados completos',()=>exportChart('json')))}
   bar.append(button('Agendar retorno',()=>{if(dirty)return;safeClose();appointmentForm();const f=$('#appointmentform');if(f)f.elements.patient.value=patientIdForReturn}));
@@ -51,7 +52,7 @@ window.AURA_CONNECT=function(options){
   const summary=document.createElement('section');summary.className='card clinical-summary';
   const identity=summaryEntries.find(e=>e.kind==='identity'),age=model.patientAge(identity?.payload.birthDate,today());
   const alerts=model.criticalAlerts(summaryEntries);
-  summary.innerHTML=`<h3>Resumo clínico</h3><p>${chart?'Número interno: '+esc(chart.chart_number):'O número interno será criado ao salvar o primeiro registro.'}${age===null?'':' · '+age+' anos'}</p>${alerts.length?`<div class="clinical-alert"><b>Informações declaradas para revisão profissional</b><ul>${alerts.map(a=>`<li>${esc(a)}</li>`).join('')}</ul><small>Alertas auxiliam a revisão. Não são diagnóstico nem autorização para realizar procedimentos.</small></div>`:'<p>Nenhum alerta declarado na última anamnese revisada. Reavalie as informações antes de cada procedimento relevante.</p>'}<small>Fotos, anexos e assinaturas estão aguardando validação e não estão disponíveis neste ambiente.</small>`;
+  summary.innerHTML=`<h3>Resumo clínico</h3><p>${chart?'Número interno: '+esc(chart.chart_number):'O número interno será criado ao salvar o primeiro registro.'}${age===null?'':' · '+age+' anos'}</p>${alerts.length?`<div class="clinical-alert"><b>Informações declaradas para revisão profissional</b><ul>${alerts.map(a=>`<li>${esc(a)}</li>`).join('')}</ul><small>Alertas auxiliam a revisão. Não são diagnóstico nem autorização para realizar procedimentos.</small></div>`:'<p>Nenhum alerta declarado na última anamnese revisada. Reavalie as informações antes de cada procedimento relevante.</p>'}<small>Assinaturas eletrônicas continuam aguardando configuração e validação externa.</small>`;
   body.append(summary,toolbar());
   const filters=document.createElement('div');filters.className='toolbar';filters.innerHTML=`<label class="field">Pesquisar nesta página<input id="clinicalSearch" type="search" placeholder="Texto do registro" autocomplete="off"></label><label class="field">Seção<select id="clinicalKind"><option value="">Todas</option>${Object.entries(model.clinicalKinds).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></label>`;body.append(filters);
   const list=document.createElement('section');list.className='clinical-timeline';list.setAttribute('aria-label','Histórico clínico');body.append(list);
