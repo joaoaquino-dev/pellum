@@ -4,6 +4,7 @@ import {resolveBuildConfig} from '../standalone/src/build-config.js';
 const production={url:'https://aaaaaaaaaaaaaaaaaaaa.supabase.co',publishableKey:'sb_publishable_fictional_production'};
 const staging={PELLUM_ENV:'staging',PELLUM_SUPABASE_URL:'https://bbbbbbbbbbbbbbbbbbbb.supabase.co',PELLUM_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fictional_staging',PELLUM_STAGING_PROJECT_REF:'bbbbbbbbbbbbbbbbbbbb'};
 assert.equal(resolveBuildConfig({},production).url,'http://127.0.0.1:54321');
+assert.throws(()=>resolveBuildConfig({VERCEL_ENV:'preview',PELLUM_ENV:'development'},production));
 assert.equal(resolveBuildConfig(staging,production).mode,'staging');
 assert.equal(resolveBuildConfig({PELLUM_ENV:'production'},production).url,production.url);
 assert.equal(resolveBuildConfig({VERCEL_ENV:'production',VERCEL_PROJECT_ID:'prj_xNNqxkDzMtJScbuTbt1Fhp5bjdRA'},production).mode,'production');

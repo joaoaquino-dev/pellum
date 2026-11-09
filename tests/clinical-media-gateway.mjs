@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createSupabaseGateway} from '../clinical-server/supabase-gateway.js';
+const id=randomUUID(),session=randomUUID(),claims={sub:id,session_id:session,exp:Math.floor(Date.now()/1000)+1000};
+const token='eyJqa.'+Buffer.from(JSON.stringify(claims)).toString('base64url')+'.qa';
+const config={url:'https://qa.example.invalid',publicKey:'sb_publishable_fictitious',serverKey:'sb_secret_fictitious'};let checks=0,mode='normal';
+const calls=[];const existing=Buffer.from('synthetic original');
+const fetcher=async(url,options)=>{
+ calls.push({url,options});
+ if(url.endsWith('/auth/v1/user'))return Response.json({id:mode==='wrong-user'?randomUUID():id});
+ if(url.includes('/rest/v1/rpc/'))return Response.json({ok:true});
+ if(url.includes('/object/sign/'))return Response.json({signedURL:mode==='unsafe-url'?'https://wrong.example.invalid/secret':'/object/sign/private/object?token=synthetic'});
+ if(options.method==='POST')return Response.json({message:'Already exists'},{status:409});
+ if(mode==='oversize')return new Response(Buffer.alloc(4000001));
+ return new Response(existing);
+};
+const gateway=createSupabaseGateway(config,{fetcher});const eq=(a,b)=>{assert.deepEqual(a,b);checks++};
+const ctx=await gateway.authenticate(token);eq(ctx.claims.sub,id);eq(calls[0].options.headers.apikey,config.publicKey);eq(calls[0].options.headers.Authorization,'Bearer '+token);
+mode='wrong-user';await assert.rejects(()=>gateway.authenticate(token),e=>e.code==='MEDIA_ACCESS_DENIED');checks++;mode='normal';
+await gateway.rpc(ctx,'list',randomUUID(),'p1');eq(calls.at(-1).options.headers.apikey,config.publicKey);
+await gateway.commit(ctx,randomUUID(),{});eq(calls.at(-1).options.headers.apikey,config.serverKey);eq(calls.at(-1).options.headers.Authorization,'Bearer '+config.serverKey);
+eq((await gateway.signedUrl('private','object')).startsWith(config.url+'/storage/v1/object/sign/'),true);eq(JSON.parse(calls.at(-1).options.body).expiresIn,30);
+mode='unsafe-url';await assert.rejects(()=>gateway.signedUrl('private','object'));checks++;mode='normal';
+await gateway.putOnce('private','object',existing,'image/jpeg');checks++;
+await assert.rejects(()=>gateway.putOnce('private','object',Buffer.from('changed'),'image/jpeg'),e=>e.code==='MEDIA_INTEGRITY');checks++;
+mode='oversize';await assert.rejects(()=>gateway.download('private','object'),e=>e.code==='MEDIA_INTEGRITY');checks++;
+console.log(`PASS: ${checks} gateway contract checks; fresh Auth lookup, identity match, separated client/server credentials, URL origin/expiry, no overwrite and bounded download. HTTP responses are explicit doubles, not real Supabase.`);

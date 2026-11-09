@@ -22,7 +22,8 @@ try{
  await reject(()=>docRpc('prepare',{...prepared,id:randomUUID(),kind:'clinical_photo_consent'}),'22023');
  const draft=save({status:'draft'});await rpc('save',draft);await reject(()=>docRpc('prepare',{...prepared,id:randomUUID(),entryId:draft.id}));
  await reject(()=>docRpc('list',{},'p2'));await login('outsider');await reject(()=>docRpc('history',{id:prepared.id}));await login();
- await reject(()=>docRpc('export',{id:prepared.id}));await login('owner','aal2');const snapshot=await docRpc('export',{id:prepared.id});eq(snapshot.source_snapshot.version.payload.summary,'Fonte clínica fictícia');
+ await reject(()=>docRpc('export',{id:prepared.id}));await login('owner','aal2');const snapshot=await docRpc('export',{id:prepared.id});eq(snapshot.source_snapshot.version.payload.summary,'Fonte clínica fictícia');eq(sha256(Buffer.from(snapshot.canonicalSource,'utf8')),snapshot.source_digest);
+ await db.exec('reset role');await db.query("update public.aura_clinics set data=jsonb_set(data,'{patients,0,name}','\"Nome fictício alterado\"') where id=$1",[ids.clinic]);await login('owner','aal2');eq((await docRpc('export',{id:prepared.id})).source_snapshot.patient.name,'Paciente fictícia A');
  await rpc('save',{...entry,version:1,status:'addendum',reason:'Complementação fictícia',payload:{summary:'Nova versão fictícia'},requestId:randomUUID()});eq((await docRpc('export',{id:prepared.id})).source_snapshot.version.payload.summary,'Fonte clínica fictícia');
  const consent=save({kind:'consent',payload:{summary:'Minuta fictícia',purpose:'Fotografia para cuidado'}});await rpc('save',consent);
  await reject(()=>docRpc('prepare',{id:randomUUID(),entryId:consent.id,version:1,kind:'advertising_consent'}),'22023');
@@ -47,12 +48,14 @@ try{
  // Coordinator contract runs against the real SQL repository, but the provider,
  // approval and cryptographic validator below are explicitly synthetic doubles.
  const second={...prepared,id:randomUUID(),version:2};const secondResult=await docRpc('prepare',second),archive=new Map(),envelopes=new Map();let calls=0,validWebhook=true;
- const repository={async loadAuthorized(ctx,id){await login('owner','aal2');const source=await docRpc('export',{id}),list=await docRpc('list');return {kind:source.kind,sourceDigest:source.source_digest,requiredSignature:source.required_signature,state:list.find(d=>d.id===id).state,signers:[{id:'synthetic-signatory'}]}},record,findEnvelope:(provider,id)=>worker('aura_clinical_document_envelope',[provider,id])};
+ eq(secondResult.sourceDigest!==result.sourceDigest,true);
+ const repository={async loadAuthorized(ctx,id){await login('owner','aal2');const source=await docRpc('export',{id}),list=await docRpc('list');return {kind:source.kind,sourceDigest:source.source_digest,canonicalSource:source.canonicalSource,requiredSignature:source.required_signature,state:list.find(d=>d.id===id).state,signers:[{id:'synthetic-signatory'}]}},record,findEnvelope:(provider,id)=>worker('aura_clinical_document_envelope',[provider,id])};
  const fakeProvider={name:'synthetic',supportsIdempotency:true,supportsProfile:()=>true,async createEnvelope({documentId}){calls++;if(!envelopes.has(documentId))envelopes.set(documentId,{id:'envelope-'+documentId});return envelopes.get(documentId)},async verifyWebhook(){return {authenticated:validWebhook,id:'callback-1',envelopeId:'envelope-'+second.id,type:'provider_completed'}},async downloadCompleted(){return {signed:Buffer.from('%PDF-fictitious-signed-artifact'),evidence:Buffer.from('synthetic evidence')}}};
  const immutableArchive={async getPrepared(id){return archive.get(id+'/prepared')},async putImmutable(id,name,bytes,hash){const key=id+'/'+name,old=archive.get(key);if(old)assert.equal(old.sha256,hash);else archive.set(key,{bytes:Buffer.from(bytes),sha256:hash})}};
  const renderer=async()=>{const pdf=await PDFDocument.create();pdf.addPage([100,100]);return Buffer.from(await pdf.save())};
  const options={provider:fakeProvider,repository,renderer,archive:immutableArchive,policy:{approved:true,version:'synthetic-approval',allows:()=>true}};
  await reject(()=>createSignatureCoordinator().dispatch({},second.id),'SIGNATURE_NOT_CONFIGURED');
+ await reject(()=>createSignatureCoordinator({...options,repository:{...repository,loadAuthorized:async()=>({kind:'professional_record',requiredSignature:'qualified',canonicalSource:'tampered',sourceDigest:'a'.repeat(64)})}}).dispatch({},second.id),'SIGNATURE_DOCUMENT_INVALID');
  const coordinator=createSignatureCoordinator(options);eq((await coordinator.dispatch({},second.id)).state,'provider_created');await coordinator.dispatch({},second.id);eq(calls,1);
  validWebhook=false;await reject(()=>coordinator.handleWebhook(Buffer.from('untrusted'),{}),'SIGNATURE_WEBHOOK_INVALID');validWebhook=true;
  eq((await coordinator.handleWebhook(Buffer.from('synthetic'),{})).state,'received_unverified');

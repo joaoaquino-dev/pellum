@@ -6,6 +6,9 @@ export function createSignatureCoordinator({provider,repository,renderer,validat
  return {
   async dispatch(context,documentId){
    configured();const document=await repository.loadAuthorized(context,documentId);
+   if(typeof document.canonicalSource!=='string'||document.canonicalSource.length>262144||sha256(Buffer.from(document.canonicalSource,'utf8'))!==document.sourceDigest)throw mediaError('SIGNATURE_DOCUMENT_INVALID',422);
+   let source;try{source=JSON.parse(document.canonicalSource)}catch{throw mediaError('SIGNATURE_DOCUMENT_INVALID',422)}
+   if(source.documentKind!==document.kind||source.requiredSignature!==document.requiredSignature)throw mediaError('SIGNATURE_DOCUMENT_INVALID',422);
    if(!policy.allows(document.kind,document.requiredSignature)||!provider.supportsProfile(document.requiredSignature))throw mediaError('SIGNATURE_PROFILE_NOT_APPROVED',422);
    if(document.state!=='prepared'&&document.state!=='dispatch_requested')return {state:document.state};
    const previous=await archive.getPrepared(documentId),bytes=previous?.bytes||await renderer(document);if(!Buffer.isBuffer(bytes)||bytes.length>20_000_000||bytes.toString('ascii',0,5)!=='%PDF-')throw mediaError('SIGNATURE_DOCUMENT_INVALID',422);

@@ -1,4 +1,4 @@
-import {mediaError,sha256} from './files.js';
+import {mediaError,sha256,MAX_FILE_BYTES} from './files.js';
 const safePath=path=>path.split('/').map(encodeURIComponent).join('/');
 export function createSupabaseGateway(config,{fetcher=fetch}={}){
  const request=async(path,{token=config.serverKey,method='GET',body,contentType='application/json',raw=false,extra={}}={})=>{
@@ -11,7 +11,13 @@ export function createSupabaseGateway(config,{fetcher=fetch}={}){
    if(error?.code==='22023'||error?.code==='23514'||error?.code==='22P02')throw mediaError('MEDIA_INVALID',422);
    throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503);
   }
-  return raw?Buffer.from(await response.arrayBuffer()):response.status===204?null:response.json();
+  if(raw){
+   if(Number(response.headers.get('content-length')||0)>MAX_FILE_BYTES)throw mediaError('MEDIA_INTEGRITY',409);
+   const reader=response.body?.getReader();if(!reader)throw mediaError('MEDIA_INTEGRITY',409);const chunks=[];let size=0;
+   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>MAX_FILE_BYTES){await reader.cancel();throw mediaError('MEDIA_INTEGRITY',409)}chunks.push(Buffer.from(value))}}finally{reader.releaseLock()}
+   return Buffer.concat(chunks);
+  }
+  return response.status===204?null:response.json();
  };
  return {
   async authenticate(token){

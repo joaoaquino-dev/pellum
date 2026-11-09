@@ -2,6 +2,7 @@
 export function resolveBuildConfig(env,production){
  const mode=env.PELLUM_ENV||(env.VERCEL_ENV==='production'?'production':env.VERCEL_ENV==='preview'?'staging':'development');
  if(!['development','staging','production'].includes(mode))throw Error('Ambiente de build inválido.');
+ if(env.VERCEL_ENV&&mode==='development')throw Error('Deploys remotos exigem configuração explícita de homologação ou produção.');
  if(env.VERCEL_ENV==='preview'&&mode==='production')throw Error('Uma prévia não pode usar a configuração de produção.');
  if(mode==='production'&&env.VERCEL_ENV&&env.VERCEL_PROJECT_ID!=='prj_xNNqxkDzMtJScbuTbt1Fhp5bjdRA')throw Error('Projeto Vercel de produção não confirmado. Configure o novo projeto como homologação.');
  let url=env.PELLUM_SUPABASE_URL,publishableKey=env.PELLUM_SUPABASE_PUBLISHABLE_KEY;

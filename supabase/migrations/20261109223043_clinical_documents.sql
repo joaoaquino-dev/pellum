@@ -53,9 +53,13 @@ create trigger clinical_document_events_immutable before update or delete on pub
 create function aura_private.clinical_document_rpc(p_action text,p_clinic uuid,p_patient text,p_body jsonb)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare d public.aura_clinical_documents; v public.aura_clinical_versions; e public.aura_clinical_entries;
- a public.aura_clinical_access; target uuid; kind text; result jsonb;
+ a public.aura_clinical_access; target uuid; kind text; result jsonb; snapshot jsonb; profile text;
 begin
  if not aura_private.clinical_access(p_clinic,p_patient,case when p_action='prepare' then 'write' when p_action='export' then 'export' else 'read' end) then raise exception 'Document access denied' using errcode='42501'; end if;
+ if p_action='prepare' then
+  perform 1 from public.aura_clinics where id=p_clinic for update;
+  if not aura_private.clinical_access(p_clinic,p_patient,'write') then raise exception 'Document access denied' using errcode='42501'; end if;
+ end if;
  if jsonb_typeof(p_body) is distinct from 'object' or octet_length(p_body::text)>4000 then raise exception 'Invalid document request' using errcode='22023'; end if;
  perform aura_private.limit_request('clinical_document',60);
  if p_action='list' then
@@ -79,9 +83,12 @@ begin
    if e.id is null or v.entry_id is null or e.author_id<>auth.uid() or v.status='draft' then raise exception 'Reviewed source by responsible professional required' using errcode='42501'; end if;
    if (kind='professional_record' and e.kind='consent') or (kind<>'professional_record' and (e.kind<>'consent' or v.payload->>'purpose' is distinct from case kind when 'procedure_consent' then 'Procedimento' when 'clinical_photo_consent' then 'Fotografia para cuidado' else 'Uso externo de imagem' end)) then raise exception 'Separate consent purpose required' using errcode='22023'; end if;
    select * into a from public.aura_clinical_access where clinic_id=p_clinic and patient_id=p_patient and user_id=auth.uid();
+   profile=case when kind<>'professional_record' then 'legal_review_required' when v.professional_category='outra' then 'advanced_or_qualified' else 'qualified' end;
+   select jsonb_build_object('entryKind',e.kind,'documentKind',kind,'requiredSignature',profile,'version',to_jsonb(v),
+    'patient',jsonb_build_object('id',p_patient,'name',(select pt->>'name' from jsonb_array_elements(c.data->'patients') pt where pt->>'id'=p_patient)),
+    'clinic',jsonb_build_object('id',c.id,'name',c.name)) into snapshot from public.aura_clinics c where c.id=p_clinic;
    insert into public.aura_clinical_documents(id,clinic_id,patient_id,prepared_by,kind,source_entry_id,source_version,source_snapshot,source_digest,required_signature)
-    values(target,p_clinic,p_patient,auth.uid(),kind,e.id,v.version,jsonb_build_object('entryKind',e.kind,'version',to_jsonb(v)),v.digest,
-     case when kind<>'professional_record' then 'legal_review_required' when v.professional_category='outra' then 'advanced_or_qualified' else 'qualified' end) returning * into d;
+    values(target,p_clinic,p_patient,auth.uid(),kind,e.id,v.version,snapshot,encode(sha256(convert_to(snapshot::text,'UTF8')),'hex'),profile) returning * into d;
    insert into public.aura_clinical_document_events(document_id,actor_id,provider,provider_event_id,event_hash,event_type,state_after)
     values(target,auth.uid(),'pellum',target::text,d.source_digest,'prepared','prepared');
   end if;
@@ -91,7 +98,7 @@ begin
   if d.id is null then raise exception 'Document access denied' using errcode='42501'; end if;
   if p_action='export' then
    if coalesce(auth.jwt()->>'aal','')<>'aal2' then raise exception 'CLINICAL_MFA_REQUIRED' using errcode='42501'; end if;
-   result=to_jsonb(d);
+   result=to_jsonb(d)||jsonb_build_object('canonicalSource',d.source_snapshot::text,'digestAlgorithm','sha256-postgresql-jsonb-text-utf8');
   else select coalesce(jsonb_agg(jsonb_build_object('type',event_type,'state',state_after,'createdAt',created_at,'preparedSha256',prepared_sha256,'signedSha256',signed_sha256) order by id),'[]') into result from public.aura_clinical_document_events where document_id=d.id; end if;
  else raise exception 'Invalid document action' using errcode='22023'; end if;
  insert into public.aura_clinical_audit(clinic_id,patient_id,actor_id,action) values(p_clinic,p_patient,auth.uid(),'document.'||p_action);

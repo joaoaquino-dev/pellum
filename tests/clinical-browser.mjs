@@ -14,6 +14,7 @@ const mediaEnv=await createMediaFixture();const {db,ids,rpc,login,snapshot}=medi
 await db.exec('reset role');await db.exec(await readFile('supabase/migrations/20261109223043_clinical_documents.sql','utf8'));await login();
 const require=createRequire(new URL('../clinical-server/package.json',import.meta.url)),sharp=require('sharp');
 const photoBytes=await sharp({create:{width:100,height:80,channels:3,background:'#345e4d'}}).jpeg().toBuffer();
+const photoBytesGold=await sharp({create:{width:100,height:80,channels:3,background:'#c39960'}}).jpeg().toBuffer();
 const fixture={...snapshot,percent:100,expenses:[],products:[],records:[],appointments:[],patients:snapshot.patients.map(p=>({...p,phone:'',note:''}))};
 const cloud={clinic:{id:ids.clinic,name:'Clínica fictícia de testes',role:'manager',owner_id:ids.owner},user:'owner@example.invalid',revision:0,is_admin:false,members:[],clinics:[{id:ids.clinic,name:'Clínica fictícia'}],data:fixture};
 const entry=`
@@ -103,7 +104,8 @@ try{
  await dialog.getByRole('button',{name:'Fotografias e anexos',exact:true}).click();await dialog.getByRole('heading',{name:'Fotografias e anexos',exact:true}).waitFor();checks++;
  const upload=dialog.locator('.clinical-media-upload');
  for(let index=0;index<2;index++){
-  await upload.locator('[name="clinicalFile"]').setInputFiles({name:'foto-ficticia-'+index+'.jpg',mimeType:'image/jpeg',buffer:photoBytes});
+  await upload.locator('[name="clinicalFile"]').setInputFiles({name:'foto-ficticia-'+index+'.jpg',mimeType:'image/jpeg',buffer:index===0?photoBytes:photoBytesGold});
+  await upload.locator('[name="capturedAt"]').fill(index===0?'2026-10-01T10:00':'2026-11-01T10:00');await upload.locator('[name="stage"]').selectOption(index===0?'before':'follow_up');
   await upload.locator('[name="region"]').fill('Região fictícia '+index);await upload.locator('[name="clinicalBasis"]').selectOption('care_basis_reviewed');await upload.locator('[name="basisReference"]').fill('Base fictícia para QA');await upload.locator('[name="processingBasisReference"]').fill('Armazenamento fictício para QA');
   if(index===0)mediaEnv.failNextPut();await upload.getByRole('button',{name:'Validar e enviar arquivo',exact:true}).click();
   if(index===0){await dialog.getByText(/Repetir o envio recupera/).waitFor();await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();await dialog.getByRole('button',{name:'Fotografias e anexos',exact:true}).click();await dialog.getByRole('button',{name:'Retomar envio pendente',exact:true}).click();await upload.locator('[name="clinicalFile"]').setInputFiles({name:'foto-ficticia-'+index+'.jpg',mimeType:'image/jpeg',buffer:photoBytes});await upload.getByRole('button',{name:'Validar e enviar arquivo',exact:true}).click();checks++}
@@ -113,7 +115,7 @@ try{
  const choices=dialog.getByRole('checkbox',{name:'Selecionar foto para comparação',exact:true});await choices.nth(0).check();await choices.nth(1).check();await dialog.getByRole('button',{name:'Comparar duas fotos selecionadas',exact:true}).click();
  const comparison=page.getByRole('dialog',{name:'Visualização clínica',exact:true});await comparison.getByRole('slider',{name:'Posição do comparador'}).fill('70');await comparison.screenshot({path:'.codex/clinical-qa/photo-comparison.png'});assert.equal(await comparison.locator('.clinical-photo-pair img').count(),2);checks++;
  await comparison.getByRole('button',{name:'Fechar visualização'}).click();await page.setViewportSize({width:390,height:844});await dialog.evaluate(el=>el.scrollTop=0);await page.screenshot({path:'.codex/clinical-qa/mobile-photos.png',fullPage:true});assert.equal(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false);checks++;
- const photoDownloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar original',exact:true}).first().click();const photoDownload=await photoDownloadPromise;assert.equal((await readFile(await photoDownload.path())).equals(photoBytes),true);checks++;
+ const photoDownloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar original',exact:true}).first().click();const photoDownload=await photoDownloadPromise;assert.equal((await readFile(await photoDownload.path())).equals(photoBytesGold),true);checks++;
  await dialog.getByRole('button',{name:'Registrar revogação de divulgação',exact:true}).first().click();await dialog.getByText('Revogação de divulgação registrada. O histórico clínico foi preservado.',{exact:true}).waitFor();checks++;
  await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();await dialog.getByRole('button',{name:'Exportar documento clínico',exact:true}).waitFor();
  await login('owner','aal2');const downloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar documento clínico',exact:true}).click();const download=await downloadPromise;const exported=await readFile(await download.path(),'utf8');assert.equal(exported.includes('<script>'),false);assert.equal(exported.includes('sem assinatura digital validada'),true);checks++;
@@ -124,6 +126,11 @@ try{
  assert.equal(await dialog.locator('.clinical-entry').count(),0);checks++;
  assert.deepEqual(errors,[]);assert.equal(failure,null);checks++;
  await page.evaluate(()=>window.dispatchEvent(new Event('pellum:session-ended')));assert.equal(await dialog.isVisible(),false);assert.equal(await dialog.textContent(),'');checks++;
+ for(const section of ['inicio','calcular','agenda','pacientes','financeiro','estoque','despesas','config']){
+  await page.locator('#nav a[href="#'+section+'"]').click();await page.waitForFunction(section=>location.hash==='#'+section&&document.querySelector('#app h1')?.textContent.trim(),section);
+  assert.equal(await page.locator('#app').evaluate(el=>el.scrollWidth>el.clientWidth+2),false);checks++;
+ }
+ assert.deepEqual(errors,[]);checks++;
  const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.equal(stored.includes('Anamnese fictícia'),false);checks++;
  console.log(`PASS: ${checks} clinical browser checks, mobile/desktop, real local RPC/PostgreSQL, conditional questionnaire, versions/addendum, template, all record sections, network retry, denied access, XSS and no clinical browser storage. Auth and remote services not tested.`);
 }catch(e){for(const p of browser.contexts().flatMap(c=>c.pages()))console.error('QA status:',await p.locator('#clinicalMessage').textContent(),'Actions:',rpcActions.join(','),'Browser errors:',errors);throw e}

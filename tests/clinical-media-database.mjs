@@ -46,7 +46,9 @@ export async function runMediaDatabaseTests(){
   await mediaRpc('publicity_revoke',{id:metadata.id});await mediaRpc('publicity_revoke',{id:metadata.id});eq((await mediaRpc('list'))[0].publicityRevoked,true);eq((await mediaRpc('list'))[0].state,'ready');
   await login();await rpc('grant',{userId:ids.owner,professionalId:0,profession:'enfermagem',write:true,export:true,enabled:true,requestId:randomUUID()},'p2');
   await reject(()=>mediaRpc('view',{id:metadata.id},'p2'),'42501');
-  await login('outsider');await reject(()=>mediaRpc('list'),'42501');await reject(()=>mediaRpc('view',{id:metadata.id},'p1',ids.otherClinic),'42501');await reject(()=>mediaRpc('publicity_revoke',{id:metadata.id}),'42501');
+  await login('outsider');await rpc('grant',{userId:ids.outsider,professionalId:0,profession:'outra',write:true,export:true,enabled:true,requestId:randomUUID()},'p1',ids.otherClinic);
+  eq((await mediaRpc('list',{},'p1',ids.otherClinic)).length,0);
+  await reject(()=>mediaRpc('list'),'42501');await reject(()=>mediaRpc('view',{id:metadata.id},'p1',ids.otherClinic),'42501');await reject(()=>mediaRpc('publicity_revoke',{id:metadata.id}),'42501');
   await reject(()=>workerCommit(metadata.id,evidence,{name:'outsider'}),'42501');
   await db.exec('reset role');
   await db.query("insert into storage.objects(bucket_id,name) values('pellum-clinical-originals',$1),('pellum-clinical-display',$2)",[ids.clinic+'/'+metadata.id+'/original',view.path]);
