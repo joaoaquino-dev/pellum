@@ -1,0 +1,10 @@
+{
+  "name": "pellum-clinical-isolated-tests",
+  "private": true,
+  "type": "module",
+  "description": "Optional local-only QA tools, never installed by the production build",
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "playwright": "1.56.1"
+  }
+}

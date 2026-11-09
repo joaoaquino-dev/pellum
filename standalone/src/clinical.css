@@ -1,0 +1,16 @@
+.clinical-dialog{width:min(960px,calc(100vw - 24px));max-width:960px;padding:20px;overscroll-behavior:contain}
+.clinical-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:sticky;top:-20px;background:#fff;z-index:1;padding:12px 0;border-bottom:1px solid var(--line)}
+.clinical-header h2{margin:8px 0;font:26px Georgia;overflow-wrap:anywhere}
+#clinicalMessage{min-height:24px;padding:12px 0;color:var(--green)}
+.clinical-toolbar{gap:8px}.clinical-toolbar button{flex:1 1 180px;text-align:left}
+.clinical-timeline{display:grid;gap:16px}.clinical-entry{overflow-wrap:anywhere}
+.clinical-entry .cardhead{align-items:flex-start;margin-bottom:12px}.clinical-entry h3{margin:0;font-size:16px}
+.clinical-text{white-space:pre-wrap;color:var(--ink)}
+.clinical-summary h3{font-size:18px;margin-top:0}
+.clinical-alert{padding:16px;border-left:4px solid var(--gold);background:var(--bg);margin:12px 0}.clinical-alert p,.clinical-alert small{color:var(--ink)}
+.clinical-questions{min-width:0;margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:8px}.clinical-questions legend{color:var(--green);font-weight:600;padding:0 6px}
+.clinical-dialog textarea{display:block;width:100%;padding:12px;margin-top:7px;border:1px solid var(--line);border-radius:6px;font:16px 'Segoe UI',Arial,sans-serif;line-height:1.5;color:var(--ink);resize:vertical;background:#fff}
+.clinical-dialog textarea:focus{outline:3px solid var(--light);border-color:var(--green)}
+.clinical-dialog select[multiple]{min-height:120px}.clinical-dialog input[type=checkbox]{accent-color:var(--green)}
+.clinical-dialog .actions{position:sticky;bottom:-20px;background:#fff;border-top:1px solid var(--line);padding:12px 0}
+@media(max-width:767px){.clinical-dialog{padding:16px}.clinical-header{top:-16px}.clinical-dialog .actions{bottom:-16px}.clinical-entry .cardhead{flex-wrap:wrap}.clinical-dialog .toolbar .field{width:100%}.clinical-dialog .toolbar input,.clinical-dialog .toolbar select{width:100%}}

@@ -1,0 +1,5 @@
+import assert from 'node:assert/strict';
+import {renderClinicalExport} from '../standalone/src/clinical-document.js';
+const html=renderClinicalExport({patient:{name:'Fictícia <script>alert(1)</script>'},chart:{chart_number:'qa'},exportedAt:'2026-01-01T12:00:00Z',entries:[{id:'entry',kind:'evolution'}],versions:[{entry_id:'entry',version:1,status:'draft',professional_name:'Fictícia',occurred_at:'2026-01-01T12:00:00Z',payload:{summary:'<img src=x onerror=alert(1)>',subjective:'Teste fictício'},digest:'qa'}]});
+assert.equal(html.includes('<script>'),false);assert.equal(html.includes('<img'),false);assert.match(html,/&lt;script&gt;/);assert.match(html,/default-src 'none'/);assert.match(html,/Rascunho/);assert.match(html,/sem assinatura digital validada/);assert.match(html,/Relato da paciente/);assert.match(html,/Teste fictício/);assert.equal(/https?:\/\//.test(html),false);
+console.log('PASS: readable clinical export preserves versions, escapes content, includes signature limitation and makes no external requests.');

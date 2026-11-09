@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {resolveBuildConfig} from '../standalone/src/build-config.js';
+const production={url:'https://aaaaaaaaaaaaaaaaaaaa.supabase.co',publishableKey:'sb_publishable_fictional_production'};
+const staging={PELLUM_ENV:'staging',PELLUM_SUPABASE_URL:'https://bbbbbbbbbbbbbbbbbbbb.supabase.co',PELLUM_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fictional_staging',PELLUM_STAGING_PROJECT_REF:'bbbbbbbbbbbbbbbbbbbb'};
+assert.equal(resolveBuildConfig({},production).url,'http://127.0.0.1:54321');
+assert.equal(resolveBuildConfig(staging,production).mode,'staging');
+assert.equal(resolveBuildConfig({PELLUM_ENV:'production'},production).url,production.url);
+assert.equal(resolveBuildConfig({VERCEL_ENV:'production',VERCEL_PROJECT_ID:'prj_xNNqxkDzMtJScbuTbt1Fhp5bjdRA'},production).mode,'production');
+for(const env of [{VERCEL_ENV:'preview'}, {...staging,PELLUM_SUPABASE_URL:production.url},{...staging,PELLUM_STAGING_PROJECT_REF:'wrong'},{...staging,PELLUM_SUPABASE_PUBLISHABLE_KEY:'sb_secret_forbidden'},{...staging,PELLUM_SUPABASE_URL:'https://bbbbbbbbbbbbbbbbbbbb.supabase.co/path'},{VERCEL_ENV:'preview',PELLUM_ENV:'production'},{VERCEL_ENV:'production',VERCEL_PROJECT_ID:'another-project'},{PELLUM_ENV:'production',PELLUM_SUPABASE_URL:staging.PELLUM_SUPABASE_URL}])assert.throws(()=>resolveBuildConfig(env,production));
+const legacySecret='eyJ.'+Buffer.from(JSON.stringify({role:'service_role'})).toString('base64url')+'.test';
+assert.throws(()=>resolveBuildConfig({...staging,PELLUM_SUPABASE_PUBLISHABLE_KEY:legacySecret},production));
+const source=await readFile('scripts/prepare-clinical-staging.mjs','utf8');assert.equal(source.includes('publishableKey:'),false);
+console.log('PASS: local builds default to loopback; previews fail closed; staging identity required; production crossover and privileged keys rejected.');

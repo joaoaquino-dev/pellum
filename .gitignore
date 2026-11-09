@@ -46,6 +46,7 @@ yarn-error.log*
 
 # Independent frontend
 /standalone/node_modules/
+/tests/clinical/node_modules/
 /standalone/dist/
 /supabase/.temp/
 /supabase/.branches/
