@@ -11,6 +11,7 @@ const tooling=process.env.PELLUM_TEST_TOOLS||path.resolve('tests/clinical/node_m
 const {chromium}=await import(pathToFileURL(path.join(tooling,'playwright/index.mjs')).href);
 const {build}=await import('../standalone/node_modules/esbuild/lib/main.js');
 const mediaEnv=await createMediaFixture();const {db,ids,rpc,login,snapshot}=mediaEnv;
+await db.exec('reset role');await db.exec(await readFile('supabase/migrations/20261109223043_clinical_documents.sql','utf8'));await login();
 const require=createRequire(new URL('../clinical-server/package.json',import.meta.url)),sharp=require('sharp');
 const photoBytes=await sharp({create:{width:100,height:80,channels:3,background:'#345e4d'}}).jpeg().toBuffer();
 const fixture={...snapshot,percent:100,expenses:[],products:[],records:[],appointments:[],patients:snapshot.patients.map(p=>({...p,phone:'',note:''}))};
@@ -26,7 +27,7 @@ const entry=`
  window.AURA_CLOUD=${JSON.stringify(cloud)};window.AURA_DATA=window.AURA_CLOUD.data;
  window.AURA_API=async()=>window.AURA_CLOUD;window.AURA_READY=()=>{};window.AURA_VERIFY_MFA=async()=>{};
  window.mediaToken='owner-aal1';
- window.AURA_CLINICAL=createClinicalService({auth:{getSession:async()=>({data:{session:{access_token:window.mediaToken}}})},rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{window.mediaToken='owner-aal2'});
+ window.AURA_CLINICAL=createClinicalService({auth:{getSession:async()=>({data:{session:{access_token:window.mediaToken}}})},rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...args,__rpcName:name,__aal:window.mediaToken.endsWith('aal2')?'aal2':'aal1'})});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{window.mediaToken='owner-aal2'});
  window.AURA_CLINICAL.actorId=${JSON.stringify(ids.owner)};
  const script=document.createElement('script');script.src='/runtime.js';document.body.append(script);
 `;
@@ -45,7 +46,7 @@ const server=createServer(async(req,res)=>{
    const b=JSON.parse(raw);rpcActions.push(b.p_action);let data,error;
    if(deny)error={code:'42501',message:'Denied'};
    else if(conflictSave&&b.p_action==='save'){conflictSave=false;error={code:'40001',message:'CLINICAL_CONFLICT'}}
-   else try{data=await rpc(b.p_action,b.p_body,b.p_patient,b.p_clinic)}catch(e){error={code:e.code,message:e.message}}
+   else try{await login('owner',b.__aal||'aal1');data=b.__rpcName==='aura_clinical_document_rpc'?(await db.query('select public.aura_clinical_document_rpc($1,$2,$3,$4) result',[b.p_action,b.p_clinic,b.p_patient,JSON.stringify(b.p_body)])).rows[0].result:await rpc(b.p_action,b.p_body,b.p_patient,b.p_clinic)}catch(e){error={code:e.code,message:e.message}}
    if(loseSave&&b.p_action==='save'){loseSave=false;res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:{message:'Simulated response lost after commit'}}));return}
    res.setHeader('Content-Type','application/json');res.end(JSON.stringify({data,error}));return;
   }
@@ -77,6 +78,10 @@ try{
  await dialog.getByRole('button',{name:'Revisar e finalizar',exact:true}).click();await dialog.getByText('Informações declaradas para revisão profissional',{exact:true}).waitFor();checks++;
  assert.equal(await page.evaluate(()=>window.PHI_LEAK),undefined);checks++;
  await dialog.evaluate(el=>el.scrollTop=0);await page.screenshot({path:'.codex/clinical-qa/mobile-timeline.png',fullPage:true});
+ await dialog.getByRole('button',{name:'Preparar documento · sem assinatura',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#clinicalMessage').textContent.startsWith('Fonte versionada preparada.'));checks++;
+ await dialog.getByRole('button',{name:'Documentos preparados',exact:true}).click();await dialog.getByText('Preparado · não assinado',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Histórico documental',exact:true}).click();await dialog.locator('li').filter({hasText:'Preparado · não assinado'}).waitFor();checks++;
+ const sourceDownloadPromise=page.waitForEvent('download');await dialog.getByRole('button',{name:'Exportar fonte · sem assinatura',exact:true}).click();const sourceDownload=await sourceDownloadPromise;const sourcePacket=JSON.parse(await readFile(await sourceDownload.path(),'utf8'));assert.equal(sourcePacket.source_version,2);assert.match(sourcePacket.notice,/não comprova assinatura/);checks++;
+ await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();await dialog.getByRole('button',{name:'Adicionar adendo',exact:true}).waitFor();
  await dialog.getByRole('button',{name:'Adicionar adendo',exact:true}).click();await dialog.locator('[name="summary"]').fill('Adendo fictício');await dialog.locator('[name="reason"]').fill('Complementação para QA');await dialog.getByRole('button',{name:'Salvar adendo',exact:true}).click();await dialog.getByRole('button',{name:'Versões',exact:true}).click();await dialog.getByText('Motivo do adendo:',{exact:false}).waitFor();checks++;
  assert.equal((await rpc('history',{id:(await rpc('list'))[0].id})).length,3);checks++;
  await dialog.getByRole('button',{name:'Voltar ao prontuário',exact:true}).click();

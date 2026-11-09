@@ -48,6 +48,7 @@ window.AURA_CONNECT=function(options){
   if(access?.can_write)bar.append(button('Modelos de anamnese',()=>templateEditor()));
   bar.append(button('Fotografias e anexos',()=>{clearTimeout(timer);epoch++;mediaView=service.mountClinicalMedia({container:find('#clinicalBody'),patient:patientId,entries,access,client:service.mediaClient,onBack:()=>{mediaView=null;reload()},onDirty:value=>dirty=value});info('Fotografias e documentos clínicos com acesso restrito.')}));
   bar.append(button('Gerenciar acesso clínico',manageAccess));
+  bar.append(button('Documentos preparados',documentList));
   if(access?.can_export){bar.append(button('Exportar documento clínico',()=>exportChart('html')));bar.append(button('Exportar dados completos',()=>exportChart('json')))}
   bar.append(button('Agendar retorno',()=>{if(dirty)return;safeClose();appointmentForm();const f=$('#appointmentform');if(f)f.elements.patient.value=patientIdForReturn}));
   const patientIdForReturn=patientId;
@@ -67,7 +68,7 @@ window.AURA_CONNECT=function(options){
    const search=find('#clinicalSearch').value.trim().toLocaleLowerCase('pt-BR'),kind=find('#clinicalKind').value;
    list.replaceChildren();
    const filtered=entries.filter(e=>(!kind||e.kind===kind)&&(!search||JSON.stringify(e.payload).toLocaleLowerCase('pt-BR').includes(search)));
-   for(const e of filtered){const card=entryCard(e);const actions=document.createElement('div');actions.className='toolbar';actions.append(button('Versões',()=>history(e)));if(access?.can_write&&e.authorId===service.actorId)actions.append(button(e.finalized?'Adicionar adendo':'Continuar rascunho',()=>edit(e.kind,e)));card.append(actions);list.append(card)}
+   for(const e of filtered){const card=entryCard(e);const actions=document.createElement('div');actions.className='toolbar';actions.append(button('Versões',()=>history(e)));if(access?.can_write&&e.authorId===service.actorId){actions.append(button(e.finalized?'Adicionar adendo':'Continuar rascunho',()=>edit(e.kind,e)));if(e.finalized){const request={id:crypto.randomUUID(),entryId:e.id,version:e.version,kind:e.kind==='consent'?({'Procedimento':'procedure_consent','Fotografia para cuidado':'clinical_photo_consent','Uso externo de imagem':'advertising_consent'}[e.payload.purpose]):'professional_record'};actions.append(button('Preparar documento · sem assinatura',async()=>{if(busy)return;busy=true;try{await service.documentCall('prepare',patientId,request);info('Fonte versionada preparada. Nenhum documento foi enviado ou assinado. Consulte Documentos preparados.')}catch(error){info(error.message)}finally{busy=false}}))}}card.append(actions);list.append(card)}
    if(!filtered.length){const p=document.createElement('p');p.className='empty';p.textContent=entries.length?'Nenhum registro corresponde à busca.':'Comece com a identificação ou uma nova anamnese.';list.append(p)}
   };
   find('#clinicalSearch').oninput=draw;find('#clinicalKind').onchange=draw;draw();
@@ -86,6 +87,22 @@ window.AURA_CONNECT=function(options){
   if(p.imagePurposes?.length)card.insertAdjacentHTML('beforeend',`<p><b>Finalidades de imagem relatadas:</b> ${esc(p.imagePurposes.join(', '))}</p>`);
   for(const m of p.materials||[])card.insertAdjacentHTML('beforeend',`<p>Material: ${esc(m.name||m.id)} · lote ${esc(m.lot||'não informado')} · ${esc(m.qty)} ${esc(m.unit||'')} · validade ${esc(m.expiry||'não informada')}</p>`);
   return card;
+ }
+ async function documentList(){
+  if(busy)return;const token=++epoch;info('Carregando documentos preparados…');
+  try{
+   const documents=await service.documentCall('list',patientId);if(token!==epoch)return;
+   const body=find('#clinicalBody');body.replaceChildren(button('Voltar ao prontuário',reload));
+   body.append(Object.assign(document.createElement('p'),{textContent:'Estes pacotes preservam a fonte clínica de uma versão. Preparado não significa assinado. A integração com fornecedor e a validação jurídica ainda estão pendentes.'}));
+   const names={professional_record:'Registro profissional',procedure_consent:'Consentimento de procedimento',clinical_photo_consent:'Fotografia para cuidado',advertising_consent:'Divulgação de imagem'};
+   const states={prepared:'Preparado · não assinado',dispatch_requested:'Envio solicitado',provider_created:'Aguardando assinatura externa',received_unverified:'Recebido · assinatura não validada',verified:'Validação externa registrada',refused:'Recusado',expired:'Expirado',cancelled:'Cancelado',validation_failed:'Falha na validação'};
+   for(const item of documents){const card=document.createElement('article');card.className='card';const title=document.createElement('h3');title.textContent=(names[item.kind]||'Documento')+' · fonte v'+item.sourceVersion;const state=document.createElement('p');state.textContent=states[item.state]||'Estado pendente';const profile=document.createElement('small');profile.textContent=item.requiredSignature==='qualified'?'Requisito técnico: assinatura qualificada do profissional; validação externa pendente.':'Método de assinatura sujeito à revisão do tipo documental.';card.append(title,state,profile);card.append(button('Histórico documental',async()=>{try{const events=await service.documentCall('history',patientId,{id:item.id});let list=card.querySelector('ul');if(!list){list=document.createElement('ul');card.append(list)}list.replaceChildren();for(const event of events){const row=document.createElement('li');row.textContent=new Date(event.createdAt).toLocaleString('pt-BR')+' · '+(states[event.state]||event.state);list.append(row)}}catch(error){info(error.message)}}));
+    if(access?.can_export)card.append(button('Exportar fonte · sem assinatura',async()=>{try{const packet=await service.documentCall('export',patientId,{id:item.id}),url=URL.createObjectURL(new Blob([JSON.stringify({notice:'Fonte clínica versionada. Este pacote não comprova assinatura.',...packet},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='pellum-fonte-nao-assinada.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(error){info(error.message)}}));body.append(card);
+   }
+   if(!documents.length)body.append(Object.assign(document.createElement('p'),{textContent:'Prepare uma versão revisada do seu próprio registro pela linha do tempo.'}));
+   if(documents.length===50)body.append(Object.assign(document.createElement('p'),{textContent:'Exibindo os 50 pacotes mais recentes. Consulta de pacotes anteriores requer paginação assistida nesta versão.'}));
+   info('Nenhuma assinatura é gerada por um checkbox ou por preparar a fonte.');
+  }catch(error){if(token===epoch)info(error.message)}
  }
  async function history(e){
   try{const versions=await service.call('history',patientId,{id:e.id});const body=find('#clinicalBody');body.replaceChildren(button('Voltar ao prontuário',reload));for(const v of versions)body.append(entryCard({kind:e.kind,version:v.version,status:v.status,occurredAt:v.occurred_at,recordedAt:v.recorded_at,professionalName:v.professional_name,registry:v.registry,reason:v.correction_reason,payload:v.payload}));info('Versões preservadas. Nenhuma versão anterior é sobrescrita.')}catch(e){info(e.message)}
