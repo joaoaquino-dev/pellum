@@ -15,6 +15,13 @@ window.AURA_CONNECT=function(options){
   mediaView?.dispose();mediaView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
  };
  dialog.addEventListener('cancel',e=>{e.preventDefault();safeClose()});
+ window.addEventListener('pellum:session-ended',()=>{
+  // Logout/expiry must clear already displayed clinical data even if a user
+  // cancels a navigation prompt from another part of the legacy application.
+  epoch++;clearTimeout(timer);mediaView?.dispose();mediaView=null;dirty=false;busy=false;activeWriter=null;
+  entries=[];summaryEntries=[];templates=[];access=null;patientId=null;service.actorId=null;
+  if(dialog.open)dialog.close();dialog.replaceChildren();
+ });
  window.addEventListener('beforeunload',e=>{if(dirty||busy||activeWriter?.state.pending){e.preventDefault();e.returnValue=''}});
  function shell(){
   dialog.innerHTML=`<div class="clinical-header"><div><span class="eyebrow">PRONTUÁRIO · HOMOLOGAÇÃO</span><h2 id="clinicalTitle">${esc(patient(patientId))}</h2></div><button type="button" id="clinicalClose" class="secondary" aria-label="Fechar prontuário">Fechar</button></div><p id="clinicalMessage" role="status" aria-live="polite"></p><div id="clinicalBody"></div>`;

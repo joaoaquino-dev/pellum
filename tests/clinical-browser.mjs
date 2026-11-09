@@ -118,6 +118,7 @@ try{
  deny=true;await page.locator('[data-clinical-patient="p1"]').click();await dialog.getByText(/Acesso clínico não autorizado/).waitFor();checks++;
  assert.equal(await dialog.locator('.clinical-entry').count(),0);checks++;
  assert.deepEqual(errors,[]);assert.equal(failure,null);checks++;
+ await page.evaluate(()=>window.dispatchEvent(new Event('pellum:session-ended')));assert.equal(await dialog.isVisible(),false);assert.equal(await dialog.textContent(),'');checks++;
  const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.equal(stored.includes('Anamnese fictícia'),false);checks++;
  console.log(`PASS: ${checks} clinical browser checks, mobile/desktop, real local RPC/PostgreSQL, conditional questionnaire, versions/addendum, template, all record sections, network retry, denied access, XSS and no clinical browser storage. Auth and remote services not tested.`);
 }catch(e){for(const p of browser.contexts().flatMap(c=>c.pages()))console.error('QA status:',await p.locator('#clinicalMessage').textContent(),'Actions:',rpcActions.join(','),'Browser errors:',errors);throw e}
