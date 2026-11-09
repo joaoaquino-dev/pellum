@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+<title id="title">Pellum — Gestão com leveza</title>
+<desc id="desc">Marca Pellum em creme sobre verde, com detalhe dourado e a frase Agenda, custos, estoque e financeiro.</desc>
+<rect width="1280" height="360" rx="20" fill="#345e4d"/>
+<path d="M80 70H170" stroke="#c39960" stroke-width="3"/>
+<text x="76" y="201" fill="#f4f4e9" font-family="Georgia, 'Times New Roman', serif" font-size="112" letter-spacing="-5">pellum</text>
+<text x="82" y="243" fill="#f4f4e9" font-family="'Segoe UI', Arial, sans-serif" font-size="15" letter-spacing="5">GESTÃO ESTÉTICA</text>
+<path d="M613 92V268" stroke="#c39960" stroke-opacity=".65"/>
+<text x="678" y="166" fill="#f4f4e9" font-family="Georgia, 'Times New Roman', serif" font-size="42">Gestão com leveza.</text>
+<text x="680" y="212" fill="#f4f4e9" font-family="'Segoe UI', Arial, sans-serif" font-size="20">Agenda, custos, estoque e financeiro.</text>
+<text x="680" y="245" fill="#f4f4e9" font-family="'Segoe UI', Arial, sans-serif" font-size="20">Mais espaço para cuidar.</text>
+</svg>
