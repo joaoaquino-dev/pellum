@@ -53,3 +53,5 @@ Antes da liberação comercial desta versão, continuam pendentes:
 - Conferência das divergências históricas de migrations antes de qualquer aplicação remota; revisão e autorização específicas para configuração/publicação. Nenhuma alteração desta continuidade chegou à produção.
 
 Mensalidades continuam por recebimento externo e liberação manual. Nada foi contratado; o resultado local não declara o SaaS liberado comercialmente.
+
+Continuidade posterior desta data: BUSINESS-REGRESSION-2026-11-09.md registra a correção da baixa de estoque e da validação de custo na edição, testes completos dos fluxos de gestão e a constatação sobre os poderes amplos de gestoras. A nova execução consolidada tem 34 arquivos de testes aprovados; a evidência anterior de 32 arquivos foi preservada como registro histórico.
