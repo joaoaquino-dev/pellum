@@ -14,7 +14,7 @@ await mkdir('.codex/qa-postgres',{recursive:true});const base=await mkdtemp(path
 // Probe an available loopback port; do not connect to any existing server.
 const probe=createServer();await new Promise(resolve=>probe.listen(0,'127.0.0.1',resolve));const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
 const env={...process.env,PGHOST:'127.0.0.1',PGPORT:String(port),PGUSER:'postgres',PGDATABASE:'postgres',PGSSLMODE:'disable',PGOPTIONS:'',PGCONNECT_TIMEOUT:'5'};delete env.PGPASSWORD;delete env.PGSERVICE;delete env.PGHOSTADDR;
-const run=(tool,args,input)=>{const r=spawnSync(path.join(bin,tool+'.exe'),args,{env,windowsHide:true,input,encoding:'utf8',timeout:60000,maxBuffer:1024*1024});if(r.status!==0)throw Error('Native synthetic QA failed: '+tool);return r.stdout};
+const run=(tool,args,input)=>{const r=spawnSync(path.join(bin,tool+'.exe'),args,{env,windowsHide:true,input,encoding:'utf8',...(tool==='pg_ctl'?{stdio:'ignore'}:{}),timeout:60000,maxBuffer:1024*1024});if(r.error||r.status!==0)throw Error('Native synthetic QA failed: '+tool);return r.stdout||''};
 let started=false;const key=randomBytes(32);
 try{
  run('initdb',['-D',data,'--auth=trust','--no-locale','--encoding=UTF8','-U','postgres']);

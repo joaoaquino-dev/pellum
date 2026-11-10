@@ -1,5 +1,7 @@
 # Backup antes da publicação
 
+Atualização posterior: o proprietário executou a rotina, o backup real foi autenticado e a recuperação local com ensaio de atualização preservou as oito tabelas originais. Consulte REAL-BACKUP-RECOVERY-2026-11-10.md. O texto abaixo registra a preparação anterior à execução; a recuperação externa e os serviços reais ainda não estão validados.
+
 10/11/2026. O proprietário informou que ainda não possui backup completo. Esta etapa preparou a ferramenta local; **nenhum backup de produção foi criado** e a versão nova não foi publicada.
 
 ## Ação necessária no próprio computador
