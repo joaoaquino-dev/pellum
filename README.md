@@ -101,7 +101,7 @@ Prontuários, imagens clínicas e assinaturas desenvolvidos fora dessas referên
 
 - [Estudo de caso para portfólio](docs/PORTFOLIO.md)
 - [Mapa do repositório](docs/REPOSITORY_GUIDE.md)
-- [Contexto técnico completo](https://github.com/joaoaquino-dev/pellum/blob/main/docs/PROJECT_CONTEXT.md)
+- [Contexto técnico completo](https://github.com/joaoaquino-dev/pellum/blob/main/standalone/README.md)
 - [Guia de contribuição](CONTRIBUTING.md) e [segurança](SECURITY.md)
 - [Revisão para publicação](docs/PUBLICATION_REVIEW.md)
 - [README histórico do piloto](docs/history/README-AURA.md)

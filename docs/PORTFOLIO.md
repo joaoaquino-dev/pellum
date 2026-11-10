@@ -51,7 +51,7 @@ O [relatório de UI](https://github.com/joaoaquino-dev/pellum/blob/main/docs/UI-
 - [Histórico de migrations](https://github.com/joaoaquino-dev/pellum/tree/main/supabase/migrations).
 - [Testes existentes](https://github.com/joaoaquino-dev/pellum/tree/main/tests).
 - [Revisão de produção e limites](https://github.com/joaoaquino-dev/pellum/blob/main/docs/AUDIT-PRODUCTION-2026-11-04.md).
-- [Contexto de arquitetura e regras](https://github.com/joaoaquino-dev/pellum/blob/main/docs/PROJECT_CONTEXT.md).
+- [Contexto de arquitetura e regras](https://github.com/joaoaquino-dev/pellum/blob/main/standalone/README.md).
 
 Os links apontam à main. Relatórios históricos conservam suas datas e limitações. A verificação atual está em PUBLICATION_REVIEW.md.
 
