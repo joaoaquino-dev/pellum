@@ -30,7 +30,7 @@ try{
  await login('owner','aal2');eq((await call('member',{email:accounts.outsider.email,remove:true})).ok,true);
  await login('outsider','aal2');await denied(()=>call('save',{data:cloud.data,revision:2}));
  await denied(()=>call('get'));
- await login('manager','aal2');eq((await call('member',{email:accounts.owner.email,remove:true})).ok,true);
- await login('owner','aal2');await denied(()=>call('get'));
- console.log(`PASS: ${checks} existing management-scope checks; manager can edit aggregate/history, invite and remove owner membership; clinical grants/platform admin denied; removed members lose snapshot access. Broad legacy powers documented as a product decision pending, not silently changed. Local SQL only.`);
+ await login('manager','aal2');await denied(()=>call('member',{email:accounts.owner.email,remove:true}));
+ await login('owner','aal2');eq((await call('get')).data.expenses.length,1);
+ console.log(`PASS: ${checks} management-scope checks; aggregate/history and non-owner membership management preserved; owner membership protected, clinical grants/platform admin denied, removed members lose access. Local SQL only; other broad legacy powers remain.`);
 }finally{await db.close()}

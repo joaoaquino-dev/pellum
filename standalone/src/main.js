@@ -1,4 +1,4 @@
-import {cloudErrorMessage} from './cloud-error.js';
+import {cloudErrorMessage,isClinicOwnershipError} from './cloud-error.js';
 import {installInterface} from './interface.js';
 import {clinicAlerts} from './clinic-alerts.js';
 import {accessNotice} from './access-notice.js';
@@ -30,7 +30,7 @@ window.AURA_CLINICAL=createClinicalService(sb,()=>clinicId,()=>security.verifyMF
 async function api(body,retry=true){
  if(body&&['create','save','member','restore','export','delete_clinic'].includes(body.action)&&!body.requestId)body={...body,requestId:newUuid()};
  const {data,error}=await sb.rpc('aura_rpc',{p_action:body?.action||'get',p_clinic:clinicId,p_body:body||{}});
- if(error){if(!loaded&&(!body?.action||body.action==='get')&&clinicId&&error.code==='42501'&&error.message==='Clínica não autorizada'){clinicId=null;rememberClinic(null);sessionStorage.removeItem('aura-clinic');return api(body,retry)}if(error.message.includes('AURA_MFA_REQUIRED')&&retry){await security.verifyMFA();return api(body,false)}if(loaded&&error.code==='42501')setTimeout(()=>location.reload(),0);const e=new Error(cloudErrorMessage(error));e.status=error.code==='40001'?409:403;throw e}
+ if(error){if(!loaded&&(!body?.action||body.action==='get')&&clinicId&&error.code==='42501'&&error.message==='Clínica não autorizada'){clinicId=null;rememberClinic(null);sessionStorage.removeItem('aura-clinic');return api(body,retry)}if(error.message.includes('AURA_MFA_REQUIRED')&&retry){await security.verifyMFA();return api(body,false)}if(loaded&&error.code==='42501'&&!isClinicOwnershipError(error))setTimeout(()=>location.reload(),0);const e=new Error(cloudErrorMessage(error));e.status=error.code==='40001'?409:403;throw e}
  if(loaded&&data?.access&&data.access.status!=='active'){setTimeout(()=>location.reload(),0);throw Error('O acesso à Aura foi interrompido. Entre novamente.')}
  return data;
 }
