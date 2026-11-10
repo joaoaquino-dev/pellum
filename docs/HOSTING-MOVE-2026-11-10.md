@@ -14,6 +14,14 @@ Após essa confirmação, usepellum.vercel.app passou a servir apenas o aviso es
 
 O restante deste documento preserva o planejamento e as evidências locais anteriores à publicação.
 
+### Correção dos links antigos após relato de 404
+
+O aviso inicial cobria a raiz, mas caminhos como /conheca/ retornavam 404. A configuração estática agora reescreve /(.*) internamente para /index.html: qualquer caminho comum antigo apresenta o mesmo aviso, com destino fixo, sem encaminhar query, fragmento, códigos de recuperação ou sessões ao novo site. Não é um redirecionamento externo automático.
+
+Correção publicada pelo conector Vercel no projeto existente, deployment dpl_8Af1vWPCKCqqVQqJYDFRree6qLNA, estado READY. Verificados doze casos públicos: raiz, /conheca/, /pacientes e caminho antigo com query sintética nos três endereços usepellum.vercel.app, pellum-piloto.vercel.app e aura-piloto.vercel.app. Todos responderam 200, exibiram aviso, botão com destino fixo na Netlify e no-referrer. Teste local ampliado: dezenove verificações, incluindo a configuração gerada. Sem screenshots, mudança de banco, sessão, plano ou aplicação Netlify.
+
+O proprietário também solicitou o envio dos commits ao GitHub e corrigiu a visibilidade: repositório PUBLIC confirmado via API. A branch de desenvolvimento é feat/phase2-hardening, sem merge ou push para main. Varredura delimitada de 604 blobs textuais históricos não encontrou os padrões procurados de chave privilegiada Supabase, JWT service_role, tokens GitHub ou chave privada. Isso não é garantia de ausência de todo tipo de dado sensível; arquivos privados e artefatos locais continuam fora do commit.
+
 ## Alvos e ordem
 
 - Nova hospedagem: Netlify, conta com type_slug credit-free e nome Free confirmados pela API. Site usepellum, ID 8645548c-6ffe-4b15-8af6-e6de73bc1a31, endereço https://usepellum.netlify.app. Criado vazio, sem integração Git, sem plano pago, adicionais ou novo banco.

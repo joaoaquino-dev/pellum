@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
 import {renderMoveNotice} from '../standalone/src/move-notice.js';
 import {chromium} from './clinical/node_modules/playwright/index.mjs';
 const destination='https://new-pellum.example.invalid';let checks=0,browser,server;const eq=(a,b)=>{assert.deepEqual(a,b);checks++};
 for(const value of [undefined,'https://usepellum.vercel.app','javascript:alert(1)','https://fake:password@example.com','https://example.com/#token']){assert.throws(()=>renderMoveNotice(value));checks++}
 const html=renderMoveNotice(destination);
+const prepared=execFileSync(process.execPath,['scripts/prepare-move-notice.mjs'],{encoding:'utf8',env:{...process.env,PELLUM_NEW_PUBLIC_ORIGIN:destination}});
+const directory=prepared.match(/Aviso preparado localmente: (.+)\. Nada foi publicado\./)?.[1];assert.ok(directory);checks++;
+const config=JSON.parse(await readFile(directory+'/vercel.json','utf8'));
+eq(config.rewrites,[{source:'/(.*)',destination:'/index.html'}]);eq(config.buildCommand,null);eq(config.installCommand,null);
 try{
  server=createServer((request,response)=>{response.setHeader('Content-Type','text/html; charset=utf-8');response.end(html)});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({headless:true,executablePath:process.env.PELLUM_BROWSER||'C:/Program Files/Google/Chrome/Application/chrome.exe'});const context=await browser.newContext(),page=await context.newPage();const outside=[],errors=[];

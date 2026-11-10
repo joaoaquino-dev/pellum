@@ -1,5 +1,7 @@
 # Pellum — transferência Work → Codex
 
+Atualização de continuidade, 10/11/2026: o repositório joaoaquino-dev/pellum está PUBLIC, confirmado pelo GitHub. Desenvolvimento atual na branch feat/phase2-hardening; aplicação publicada em https://usepellum.netlify.app. A Vercel antiga serve apenas aviso de mudança, incluindo caminhos antigos. Consulte [SIMPLICIDADE-2026-11-10.md](SIMPLICIDADE-2026-11-10.md) e [HOSTING-MOVE-2026-11-10.md](HOSTING-MOVE-2026-11-10.md). O registro abaixo preserva o estado histórico de 09/11; não confundir suas pendências com o estado atual nem promover a main automaticamente.
+
 Preparado em 09/11/2026, America/Sao_Paulo. Escopo exclusivo: documentação. O proprietário enviará outro prompt para desenvolvimento.
 
 ## Ponto de retomada
