@@ -2,10 +2,10 @@
 
 Referência: 09/11/2026, America/Sao_Paulo. Repositório permanece privado.
 
-## Alterações preparadas
+## Alterações realizadas
 
-- PR de alinhamento da main à versão Supabase/Vercel de fix/whatsapp-contact, preservando ambas as histórias.
-- PR documental e de ferramentas: README, estudo de caso, licença de direitos reservados escolhida pelo proprietário, comando de testes e mapa do projeto.
+- [PR #5](https://github.com/joaoaquino-dev/pellum/pull/5) mesclado: main alinhada à versão Supabase/Vercel de fix/whatsapp-contact, preservando ambas as histórias.
+- [PR #6](https://github.com/joaoaquino-dev/pellum/pull/6) mesclado, documental e de ferramentas: README, estudo de caso, licença de direitos reservados escolhida pelo proprietário, comando de testes e mapa do projeto.
 - CONTRIBUTING e SECURITY preservados e ajustados. Notas internas identificadas; nenhum arquivo histórico ou branch removido.
 - Participação do autor e apoio de IA explicitados.
 
@@ -39,17 +39,22 @@ O runner adicionado permite repetir os testes sem executar SQL. Resultados de SQ
 - Esta varredura não certifica ausência de segredos; formatos desconhecidos e conteúdo binário de imagens não foram inspecionados semanticamente. Os arquivos binários existentes são ícones e arte de marca por caminho, sem nova captura clínica usada nesta etapa.
 - Arquivos locais fora do GitHub, commits inalcançáveis, clones externos e superfícies não listadas pelo conector não são verificáveis nesta sessão.
 - Capturas reais novas com dados fictícios continuam pendentes pelo bloqueio do navegador. Não foram inventadas telas.
-- Build e testes locais foram executados na árvore candidata; enquanto o PR principal não for mesclado, não constituem teste de uma main já atualizada.
-- A main dispara deploy automático de produção. Merge requer ciência do proprietário sobre esse efeito; não houve mudança manual em configuração de Vercel, Auth, banco ou permissões.
+- Após o merge em main (30cc02c), 215 arquivos da aplicação foram comparados por hash de blob Git com o checkout validado, sem diferenças. Os 11 testes e o guard estático foram repetidos com zero falhas; build também repetido. Alterações posteriores deste relatório são apenas documentais.
+- A main dispara deploy automático de produção; o efeito foi comunicado antes da conclusão solicitada pelo proprietário. Não houve mudança manual em configuração de Vercel, Auth, banco ou permissões. A página pública /conheca/ retornou HTTP 200 após o merge.
 - Uma remoção ampla da infraestrutura histórica e encerramento de PRs antigos foram adiados; nada foi apagado sem aviso.
+
+## Links e imagens
+
+Referências internas de README e PORTFOLIO verificadas contra a árvore consolidada: sem destinos ausentes. Links de código/documentos apontam para main; banner SVG existente preservado. O site público respondeu HTTP 200. A navegação visual e capturas novas permanecem bloqueadas pelo ambiente. Não foi alegado teste externo de login do Instagram ou uma renderização autenticada do GitHub.
 
 ## Checklist para tornar público manualmente
 
-- [ ] PRs preparados integrados e SHA final da main conferido.
-- [ ] Build e testes repetidos após merge no SHA final.
+- [x] PRs #5 e #6 integrados e código final da main conferido.
+- [x] Build e testes repetidos após merge, com identidade dos arquivos validada.
 - [ ] Capturas reais adicionadas quando houver navegador funcional.
 - [ ] Contatos e autoria de commits aceitos como exposição pública pelo proprietário.
-- [ ] Licença e relatório revisados pelo proprietário.
+- [x] Licença de direitos reservados escolhida pelo proprietário.
+- [ ] Relatório final revisado pelo proprietário.
 - [ ] Conferência final de comentários/anexos e novas refs criados após esta revisão.
 - [ ] Alterar visibilidade manualmente somente após confirmação do proprietário.
 
