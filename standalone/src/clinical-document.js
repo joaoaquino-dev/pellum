@@ -1,11 +1,11 @@
-import {clinicalKinds,clinicalFields,triLabels,nursingSteps} from './clinical-model.js';
+import {clinicalKinds,clinicalDisplayFields,triLabels,nursingSteps} from './clinical-model.js';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=value=>value?new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'Não informado';
 export function renderClinicalExport(record){
  const entries=new Map((record.entries||[]).map(e=>[e.id,e]));
  const versions=(record.versions||[]).map(v=>{
   const e=entries.get(v.entry_id)||{},p=v.payload||{};
-  const rows=[['Resumo',p.summary],...(clinicalFields[e.kind]||[]).map(([key,label])=>[label,p[key]]),['Procedimento',p.procedure],['Finalidades de imagem relatadas',(p.imagePurposes||[]).join(', ')]];
+  const rows=[['Resumo',p.summary],...clinicalDisplayFields(e.kind).map(([key,label])=>[label,p[key]]),['Procedimento',p.procedure],['Finalidades de imagem relatadas',(p.imagePurposes||[]).join(', ')]];
   for(const q of p.questions||[])if(p.answers?.[q.id]!==undefined)rows.push([q.label,q.type==='tri'?triLabels[p.answers[q.id]]:Array.isArray(p.answers[q.id])?p.answers[q.id].join(', '):p.answers[q.id]]);
   if(p.nursing)nursingSteps.forEach((name,i)=>rows.push([name,p.nursing[i]]));
   for(const m of p.materials||[])rows.push(['Produto / lote / quantidade / validade',[m.name||m.id,m.lot||'Lote não informado',m.qty+' '+(m.unit||''),m.expiry||'Validade não informada'].join(' · ')]);

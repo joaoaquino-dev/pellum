@@ -28,7 +28,7 @@ const entry=`
  window.AURA_CLOUD=${JSON.stringify(cloud)};window.AURA_DATA=window.AURA_CLOUD.data;
  window.AURA_API=async()=>window.AURA_CLOUD;window.AURA_READY=()=>{};window.AURA_VERIFY_MFA=async()=>{};
  window.mediaToken='owner-aal1';
- window.AURA_CLINICAL=createClinicalService({auth:{getSession:async()=>({data:{session:{access_token:window.mediaToken}}})},rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...args,__rpcName:name,__aal:window.mediaToken.endsWith('aal2')?'aal2':'aal1'})});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{window.mediaToken='owner-aal2'});
+ window.AURA_CLINICAL=createClinicalService({auth:{getSession:async()=>({data:{session:{access_token:window.mediaToken}}})},rpc:async(name,args)=>{const response=await fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...args,__rpcName:name,__aal:window.mediaToken.endsWith('aal2')?'aal2':'aal1'})});return response.json()}},()=>window.AURA_CLOUD.clinic.id,async()=>{window.mediaToken='owner-aal2'},{mediaEnabled:true});
  window.AURA_CLINICAL.actorId=${JSON.stringify(ids.owner)};
  const script=document.createElement('script');script.src='/runtime.js';document.body.append(script);
 `;

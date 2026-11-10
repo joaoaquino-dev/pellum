@@ -46,7 +46,7 @@ window.AURA_CONNECT=function(options){
   const bar=document.createElement('div');bar.className='toolbar clinical-toolbar';
   if(access?.can_write)for(const kind of Object.keys(model.clinicalKinds))bar.append(button('＋ '+model.clinicalKinds[kind],()=>edit(kind),false));
   if(access?.can_write)bar.append(button('Modelos de anamnese',()=>templateEditor()));
-  bar.append(button('Fotografias e anexos',()=>{clearTimeout(timer);epoch++;mediaView=service.mountClinicalMedia({container:find('#clinicalBody'),patient:patientId,entries,access,client:service.mediaClient,onBack:()=>{mediaView=null;reload()},onDirty:value=>dirty=value});info('Fotografias e documentos clínicos com acesso restrito.')}));
+  if(service.mediaEnabled)bar.append(button('Fotografias e anexos',()=>{clearTimeout(timer);epoch++;mediaView=service.mountClinicalMedia({container:find('#clinicalBody'),patient:patientId,entries,access,client:service.mediaClient,onBack:()=>{mediaView=null;reload()},onDirty:value=>dirty=value});info('Fotografias e documentos clínicos com acesso restrito.')}));
   bar.append(button('Gerenciar acesso clínico',manageAccess));
   bar.append(button('Documentos preparados',documentList));
   if(access?.can_export){bar.append(button('Exportar documento clínico',()=>exportChart('html')));bar.append(button('Exportar dados completos',()=>exportChart('json')))}
@@ -131,7 +131,7 @@ window.AURA_CONNECT=function(options){
   const card=document.createElement('article');card.className='card clinical-entry';
   const p=entry.payload||{},status={draft:'Rascunho',reviewed:'Revisado · sem assinatura digital',addendum:'Adendo · sem assinatura digital'}[entry.status]||'Registro';
   card.innerHTML=`<div class="cardhead"><h3>${esc(model.clinicalKinds[entry.kind]||'Versão clínica')}</h3><span class="tag">${esc(status)} · v${entry.version}</span></div><small>Atendimento: ${esc(new Date(entry.occurredAt).toLocaleString('pt-BR'))}<br>Registrado: ${esc(new Date(entry.recordedAt).toLocaleString('pt-BR'))}<br>${esc(entry.professionalName)} ${esc(entry.registry||'')}</small>${entry.reason?`<p><b>Motivo do adendo:</b> ${esc(entry.reason)}</p>`:''}<p class="clinical-text">${esc(p.summary)}</p>`;
-  const labels=Object.fromEntries((model.clinicalFields[entry.kind]||[]).map(([key,label])=>[key,label]));labels.procedure='Procedimento';labels.notes='Observações';
+  const labels=Object.fromEntries(model.clinicalDisplayFields(entry.kind).map(([key,label])=>[key,label]));labels.procedure='Procedimento';labels.notes='Observações';
   for(const [key,label] of Object.entries(labels))if(p[key])card.insertAdjacentHTML('beforeend',`<p class="clinical-text"><b>${esc(label)}:</b> ${esc(p[key])}</p>`);
   for(const q of p.questions||[]){const value=p.answers?.[q.id];if(value!==undefined&&model.visibleQuestion(q,p.answers||{}))card.insertAdjacentHTML('beforeend',`<p class="clinical-text"><b>${esc(q.label)}:</b> ${esc(q.type==='tri'?model.triLabels[value]:Array.isArray(value)?value.join(', '):value)}</p>`)}
   if(p.nursing)model.nursingSteps.forEach((label,i)=>{if(p.nursing[i])card.insertAdjacentHTML('beforeend',`<p class="clinical-text"><b>${esc(label)}:</b> ${esc(p.nursing[i])}</p>`)});
@@ -167,6 +167,17 @@ window.AURA_CONNECT=function(options){
   form.innerHTML=`<h3>${esc(model.clinicalKinds[kind])}${entry?.finalized?' · novo adendo':''}</h3><p>Preencha apenas as informações pertinentes ao atendimento.</p><label class="field">Data e horário do atendimento<input name="occurredAt" type="datetime-local" required value="${localDateTime(entry?.occurredAt)}"></label>${labelInput('summary','Resumo do registro','textarea',payload.summary||'')}`;
   if(['plan','procedure','adverse_event'].includes(kind))form.insertAdjacentHTML('beforeend',`<label class="field">Procedimento<select name="procedure"><option value="">Não informado</option>${[...new Set([...(payload.procedure?[payload.procedure]:[]),...procedures])].map(v=>`<option ${v===payload.procedure?'selected':''}>${esc(v)}</option>`).join('')}</select></label>`);
   for(const [name,label,type='textarea',values=[]] of model.clinicalFields[kind])form.insertAdjacentHTML('beforeend',labelInput(name,label,type,payload[name]||'',values));
+  for(const group of model.clinicalExtraGroups[kind]||[]){
+   const details=document.createElement('details');details.className='clinical-optional';const summary=document.createElement('summary');summary.textContent=group.title+' · se necessário';details.append(summary);
+   for(const [name,label] of group.fields)details.insertAdjacentHTML('beforeend',labelInput(name,label,'textarea',payload[name]||''));
+   const populated=()=>group.fields.some(([name])=>form.elements[name]?.value.trim());
+   details.open=group.fields.some(([name])=>payload[name]);form.append(details);
+   if(group.match){const [field,value]=group.match;const update=()=>{details.hidden=form.elements[field].value!==value&&!populated()};form.elements[field].addEventListener('change',update);update()}
+  }
+  if(kind==='procedure'){
+   const updateLabels=()=>{const labels=model.procedureDetailLabels(form.elements.procedure.value);['preparationDetails','applicationDetails'].forEach((key,index)=>{form.elements[key].parentElement.firstChild.textContent=labels[index]})};form.elements.procedure.addEventListener('change',updateLabels);updateLabels();
+  }
+  if(kind==='adverse_event')form.insertAdjacentHTML('afterbegin','<small>Em situações urgentes, priorize o atendimento conforme os protocolos profissionais e serviços de emergência.</small>');
   // Future appointments/return dates are allowed; birth dates and event dates are not.
   form.elements.returnDate?.removeAttribute('max');
   if(['procedure','evolution','adverse_event'].includes(kind)){
@@ -218,7 +229,7 @@ window.AURA_CONNECT=function(options){
   actions.append(back,save);if(!entry?.finalized)actions.append(review);form.append(actions);body.append(form);
   const writer=model.createClinicalWriter({send:b=>service.call('save',patientId,b),id:entry?.id||crypto.randomUUID(),kind,version:entry?.version||0});activeWriter=writer;
   function readData(status){
-   const data={...payload};for(const [name] of model.clinicalFields[kind])data[name]=form.elements[name].value;
+   const data={...payload};for(const [name] of model.clinicalDisplayFields(kind))data[name]=form.elements[name].value;
    for(const name of ['summary','procedure','planId','appointmentId','financialRecordId'])if(form.elements[name])data[name]=form.elements[name].value;
    if(form.readQuestionnaire)Object.assign(data,form.readQuestionnaire(status!=='draft'));
    if(kind==='consent')data.imagePurposes=data.purpose==='Uso externo de imagem'?model.imagePurposes.filter((_,i)=>form.elements['imagePurpose_'+i].checked):[];

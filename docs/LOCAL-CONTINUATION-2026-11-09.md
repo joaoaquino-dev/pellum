@@ -59,3 +59,5 @@ Continuidade posterior desta data: BUSINESS-REGRESSION-2026-11-09.md registra a 
 OWNER-PROTECTION-2026-11-09.md registra a proteção local posterior contra remoção/reassociação do vínculo da proprietária e contra exclusão da clínica por outra gestora. Preserva retenção clínica, exclusão autorizada e os demais poderes legados; ainda não aplicada remotamente.
 
 Continuidade de 10/11: CLINICAL-STOCK-2026-11-10.md implementa materiais diretamente pelo prontuário, sem lançamento financeiro obrigatório. Saldo insuficiente gera lembrete sem impedir o registro, seguindo a orientação mais recente. A interface foi simplificada para celular/tablet/notebook; sem contratação ou aplicação remota.
+
+Orientação posterior e entrega: CLINICAL-CHART-2026-11-10.md prioriza ficha textual e adia fotos. A configuração padrão esconde a entrada de imagens; a ficha ganhou detalhes opcionais por avaliação/procedimento e conteúdo de termos, preservados no banco e na exportação. Relatórios anteriores de mídia registram trabalho histórico, não uma obrigação de habilitá-la nesta versão.

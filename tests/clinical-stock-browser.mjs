@@ -7,7 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {build} from '../standalone/node_modules/esbuild/lib/main.js';
 import {createStockFixture} from './clinical/stock-fixture.mjs';
 const {chromium}=await import(pathToFileURL(path.resolve('tests/clinical/node_modules/playwright/index.mjs')).href);
-const {db,accounts,clinic,login,rpc,procedure,snapshot,clinical}=await createStockFixture();let browser,server,checks=0,loseResponse=true,confirmations=0;const errors=[],consumptions=[];
+const {db,accounts,clinic,login,rpc,procedure,snapshot,clinical}=await createStockFixture();let browser,server,checks=0,loseResponse=true,confirmations=0,mediaRequests=0;const errors=[],consumptions=[];
 const eq=(a,b)=>{assert.deepEqual(a,b);checks++};
 try{
  const entry=await procedure();
@@ -31,6 +31,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({headless:true,executablePath:process.env.PELLUM_BROWSER||'C:/Program Files/Google/Chrome/Application/chrome.exe'});const context=await browser.newContext({viewport:{width:390,height:844}});
  await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>{confirmations++;dialog.accept()});
+ page.on('request',request=>{if(request.url().includes('/api/clinical-media'))mediaRequests++});
  await page.goto(origin+'/#pacientes');await page.locator('[data-clinical-patient="patient-qa"]').click();const dialog=page.locator('#clinicalDialog');
  await dialog.getByRole('button',{name:'Adicionar materiais',exact:true}).click();const form=dialog.locator('#clinicalStockForm');await form.waitFor();eq(await form.locator('[data-stock-row]').count(),1);eq(await form.locator('option[value="expired"]').count(),0);
  await mkdir('.codex/clinical-qa',{recursive:true});
@@ -52,6 +53,17 @@ try{
  await form.locator('[data-stock-quantity]').fill('70');await form.getByRole('button',{name:'Salvar materiais',exact:true}).click();await dialog.getByText('Materiais registrados. Lembre-se de revisar seu estoque.',{exact:true}).waitFor();eq((await snapshot()).data.products[0].balance,60);eq((await snapshot()).data.records.length,0);eq((await clinical('history',{id:pendingEntry.id})).at(-1).payload.stockReview,'pending');eq(errors,[]);
  const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));eq(stored.includes('Procedimento fictício'),false);
  eq(confirmations,0);
+ eq(await dialog.getByRole('button',{name:'Fotografias e anexos',exact:true}).count(),0);eq(mediaRequests,0);
+ // Default product has no photo workflow. Optional profile fields remain real
+ // clinical content: save through the actual RPC, then inspect SQL and export.
+ await dialog.getByRole('button',{name:'＋ Procedimento realizado',exact:true}).click();await dialog.locator('[name="summary"]').fill('Procedimento específico fictício');await dialog.locator('[name="procedure"]').selectOption('Toxina botulínica');
+ await dialog.getByText('Detalhes do procedimento · se necessário',{exact:true}).click();await dialog.getByLabel('Preparo e diluição utilizados',{exact:true}).fill('Preparo documentado pelo profissional, sem recomendação automática');await dialog.getByLabel('Regiões, pontos e unidades aplicadas',{exact:true}).fill('Descrição fictícia de aplicação');await dialog.locator('[name="productDetails"]').fill('Produto e fabricante fictícios');await dialog.locator('[name="batchDetails"]').fill('Lote QA-MANUAL, quantidade e unidade conferidas');
+ await dialog.getByRole('button',{name:'Revisar e finalizar',exact:true}).click();await dialog.getByRole('button',{name:'＋ Avaliação',exact:true}).waitFor();
+ const procedureRecord=(await clinical('list')).find(e=>e.payload.summary==='Procedimento específico fictício');eq(procedureRecord.payload.applicationDetails,'Descrição fictícia de aplicação');eq(procedureRecord.payload.productDetails,'Produto e fabricante fictícios');eq(procedureRecord.finalized,true);
+ await dialog.getByRole('button',{name:'＋ Avaliação',exact:true}).click();await dialog.locator('[name="summary"]').fill('Avaliação corporal fictícia');await dialog.locator('[name="assessmentType"]').selectOption('Corporal');eq(await dialog.getByText('Avaliação facial · se necessário',{exact:true}).isVisible(),false);eq(await dialog.getByText('Avaliação corporal · se necessário',{exact:true}).isVisible(),true);
+ await dialog.getByText('Avaliação corporal · se necessário',{exact:true}).click();await dialog.locator('[name="bodyMeasurements"]').fill('Medida fictícia: 80 cm');await dialog.getByRole('button',{name:'Revisar e finalizar',exact:true}).click();await dialog.getByRole('button',{name:'＋ Avaliação',exact:true}).waitFor();
+ eq((await clinical('list')).find(e=>e.payload.summary==='Avaliação corporal fictícia').payload.bodyMeasurements,'Medida fictícia: 80 cm');eq(mediaRequests,0);eq(errors,[]);
+ await db.exec('reset role');eq((await db.query("select count(*)::int n from public.aura_clinical_versions where payload->>'applicationDetails'='Descrição fictícia de aplicação'")).rows[0].n,1);
  console.log(`PASS: ${checks} clinical-stock browser checks; real main/runtime/local SQL, lot selection, lost response/replay, immutable addendum, refreshed revision, later expense save, insufficient stock as a nonblocking reminder and mobile layout. Auth service is a double.`);
 }catch(error){for(const page of browser?.contexts().flatMap(c=>c.pages())||[])console.error('Stock QA screen:',(await page.locator('body').innerText()).slice(0,1500),errors);throw error}
 finally{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));await db.close()}

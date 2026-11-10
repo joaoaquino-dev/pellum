@@ -15,6 +15,30 @@ export const clinicalFields = {
  consent:[['purpose','Finalidade','select',['Procedimento','Fotografia para cuidado','Uso externo de imagem']],['documentVersion','Versão do modelo'],['scope','Escopo, riscos, alternativas, limitações e esclarecimentos'],['manifestation','Manifestação declarada','select',['Ainda não coletada','Aceite relatado — sem assinatura validada','Recusa relatada']],['revocation','Revogação solicitada para usos futuros, se houver']]
 };
 export const imagePurposes=['Redes sociais','Site institucional','Materiais publicitários','Materiais educativos'];
+// Optional documentation, never a prescription or an automatic safety decision.
+export const clinicalExtraGroups={
+ anamnesis:[{title:'Histórico e hábitos',fields:[['previousProcedureDetails','Procedimentos anteriores: região, data, produtos e resultado conhecido'],['reactionDetails','Reações anteriores: agente, gravidade e quando ocorreu'],['lifestyleDetails','Tabaco, álcool, exposição solar e cuidados com a pele, se pertinentes']]}],
+ evaluation:[
+  {title:'Avaliação facial',match:['assessmentType','Facial'],fields:[['phototype','Fototipo, se avaliado'],['hydration','Hidratação e oleosidade'],['skinTexture','Textura, acne e lesões'],['pigmentation','Manchas e cicatrizes'],['facialChanges','Rugas, flacidez, assimetria e volume']]},
+  {title:'Avaliação corporal',match:['assessmentType','Corporal'],fields:[['bodySkin','Condições da pele e região corporal'],['bodyChanges','Flacidez, estrias, cicatrizes e edema'],['bodyMeasurements','Medidas pertinentes, com suas unidades']]}
+ ],
+ plan:[{title:'Detalhes do plano',fields:[['identifiedNeed','Queixa ou necessidade identificada'],['followUpCriteria','Quando reavaliar ou encaminhar, conforme decisão profissional']]}],
+ procedure:[{title:'Detalhes do procedimento',fields:[['productDetails','Produtos, marcas e fabricantes utilizados'],['batchDetails','Lotes, validades, quantidades e unidades'],['preparationDetails','Preparo e parâmetros registrados pelo profissional'],['applicationDetails','Áreas, técnica e aplicação realizadas']]}],
+ adverse_event:[{title:'Acompanhamento da intercorrência',fields:[['eventTiming','Início dos sinais ou sintomas e relação com o atendimento'],['monitoring','Contatos e reavaliações realizados'],['notificationReference','Referência de notificação, se realizada pelo responsável']]}],
+ consent:[{title:'Conteúdo do termo',fields:[['possibleBenefits','Benefícios possíveis, sem garantia de resultado'],['risks','Riscos e complicações discutidos'],['alternatives','Alternativas apresentadas'],['resultLimitations','Limitações explicadas'],['priorInstructions','Cuidados antes do procedimento'],['afterInstructions','Cuidados posteriores e acompanhamento'],['questionsDiscussed','Dúvidas esclarecidas']]}]
+};
+export function clinicalDisplayFields(kind){return [...(clinicalFields[kind]||[]),...(clinicalExtraGroups[kind]||[]).flatMap(group=>group.fields)]}
+export function procedureDetailLabels(procedure){
+ const name=String(procedure||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ if(name.includes('toxina'))return ['Preparo e diluição utilizados','Regiões, pontos e unidades aplicadas'];
+ if(name.includes('preenchimento'))return ['Produto e preparo utilizados','Regiões, volumes, plano e técnica de aplicação'];
+ if(name.includes('bioestimulador'))return ['Produto, preparo e diluição utilizados','Regiões, volumes e técnica de aplicação'];
+ if(name.includes('skinbooster'))return ['Produto e preparo utilizados','Regiões, volumes e técnica de aplicação'];
+ if(name.includes('microagulhamento'))return ['Equipamento e materiais utilizados','Áreas, profundidade e parâmetros utilizados'];
+ if(name.includes('peeling'))return ['Produto, concentração e preparo utilizados','Áreas, tempo de contato e cuidados realizados'];
+ if(name.includes('limpeza'))return ['Produtos e materiais utilizados','Etapas e cuidados realizados'];
+ return ['Preparo e parâmetros registrados pelo profissional','Áreas, técnica e aplicação realizadas'];
+}
 const conditions = [
  ['cardiovascular','Hipertensão ou condição cardiovascular'],['diabetes','Diabetes'],
  ['autoimmune','Doença autoimune'],['coagulation','Distúrbio de coagulação'],

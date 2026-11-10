@@ -38,3 +38,6 @@
 #clinicalStockForm button{min-height:44px}
 .clinical-stock-row small{display:block;line-height:1.5;margin:4px 0}
 @media(max-width:640px){.clinical-stock-fields{grid-template-columns:minmax(0,1fr)}}
+.clinical-optional{margin:14px 0;border:1px solid var(--line);border-radius:8px;padding:0 12px}
+.clinical-optional summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--green);font-weight:600}
+.clinical-optional .field{margin:12px 0}

@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
-import {defaultQuestions,validateQuestions,validateAnswers,patientAge,criticalAlerts,createClinicalWriter,clinicalError} from '../standalone/src/clinical-model.js';
+import {defaultQuestions,validateQuestions,validateAnswers,patientAge,criticalAlerts,createClinicalWriter,clinicalError,clinicalDisplayFields,procedureDetailLabels} from '../standalone/src/clinical-model.js';
+assert.equal(new Set(clinicalDisplayFields('evaluation').map(([id])=>id)).size,clinicalDisplayFields('evaluation').length);
+assert.match(procedureDetailLabels('Toxina botulínica')[0],/diluição/);
+assert.match(procedureDetailLabels('Preenchimento facial')[1],/volumes/);
+assert.match(procedureDetailLabels('Microagulhamento')[1],/profundidade/);
+assert.match(procedureDetailLabels('Peeling')[1],/tempo de contato/);
+assert.deepEqual(procedureDetailLabels('Procedimento personalizado'),['Preparo e parâmetros registrados pelo profissional','Áreas, técnica e aplicação realizadas']);
 assert.equal(validateQuestions(defaultQuestions).length,28);
 assert.equal(patientAge('2000-11-10','2026-11-09'),25);
 assert.equal(patientAge('2000-11-09','2026-11-09'),26);

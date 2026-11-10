@@ -13,3 +13,5 @@ Registro da orientação posterior à Fase 2, em 09/11/2026, America/Sao_Paulo.
 Esta decisão prevalece sobre sugestões anteriores de contratar homologação paga como próximo passo. Buscar alternativas locais e gratuitas; não pausar/excluir outros projetos para liberar vagas sem instrução específica.
 
 Complemento de 10/11/2026: não criar ambiente separado que gere despesa. Saldo insuficiente ou desatualizado não deve bloquear o atendimento; preferir lembrete discreto para revisar o estoque. Priorizar simplicidade, rapidez e uso em celular, iPad e notebook, com informações reunidas no fluxo do atendimento.
+
+Orientação posterior de 10/11: adiar fotos na Pellum e priorizar ficha/prontuário conforme o prompt. Fotografias ficarão sob os cuidados das profissionais em seus próprios celulares; não criar galeria, captura, upload ou integração externa para esse uso nesta versão. Preservar o código anterior e registros históricos, sem publicar ou contratar serviços por inferência. Continuidade em CLINICAL-CHART-2026-11-10.md.
