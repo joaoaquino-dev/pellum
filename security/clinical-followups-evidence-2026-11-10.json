@@ -1,0 +1,274 @@
+{
+  "node": "v24.22.2",
+  "platform": "win32",
+  "architecture": "x64",
+  "completedAt": "2026-11-10T15:19:38.838Z",
+  "testFiles": 42,
+  "testFilesExecuted": 42,
+  "testFilesSkipped": 0,
+  "passed": 52,
+  "failed": 0,
+  "results": [
+    {
+      "label": "build",
+      "passed": true,
+      "durationMs": 216
+    },
+    {
+      "label": "access-notice.mjs",
+      "passed": true,
+      "durationMs": 51
+    },
+    {
+      "label": "account-navigation.mjs",
+      "passed": true,
+      "durationMs": 52
+    },
+    {
+      "label": "action-feedback.mjs",
+      "passed": true,
+      "durationMs": 51
+    },
+    {
+      "label": "build-environment.mjs",
+      "passed": true,
+      "durationMs": 54
+    },
+    {
+      "label": "business-browser.mjs",
+      "passed": true,
+      "durationMs": 3389
+    },
+    {
+      "label": "clinic-alerts.mjs",
+      "passed": true,
+      "durationMs": 55
+    },
+    {
+      "label": "clinic-management-permissions.mjs",
+      "passed": true,
+      "durationMs": 1077
+    },
+    {
+      "label": "clinic-owner-browser.mjs",
+      "passed": true,
+      "durationMs": 2110
+    },
+    {
+      "label": "clinic-owner-protection.mjs",
+      "passed": true,
+      "durationMs": 1050
+    },
+    {
+      "label": "clinical-auth-audit.mjs",
+      "passed": true,
+      "durationMs": 921
+    },
+    {
+      "label": "clinical-auth-browser.mjs",
+      "passed": true,
+      "durationMs": 1105
+    },
+    {
+      "label": "clinical-browser.mjs",
+      "passed": true,
+      "durationMs": 5144
+    },
+    {
+      "label": "clinical-database.mjs",
+      "passed": true,
+      "durationMs": 1661
+    },
+    {
+      "label": "clinical-document.mjs",
+      "passed": true,
+      "durationMs": 66
+    },
+    {
+      "label": "clinical-documents.mjs",
+      "passed": true,
+      "durationMs": 1137
+    },
+    {
+      "label": "clinical-followup-browser.mjs",
+      "passed": true,
+      "durationMs": 2662
+    },
+    {
+      "label": "clinical-followups.mjs",
+      "passed": true,
+      "durationMs": 1821
+    },
+    {
+      "label": "clinical-form-template-browser.mjs",
+      "passed": true,
+      "durationMs": 3052
+    },
+    {
+      "label": "clinical-form-templates.mjs",
+      "passed": true,
+      "durationMs": 1669
+    },
+    {
+      "label": "clinical-media-database.mjs",
+      "passed": true,
+      "durationMs": 933
+    },
+    {
+      "label": "clinical-media-files.mjs",
+      "passed": true,
+      "durationMs": 790
+    },
+    {
+      "label": "clinical-media-gateway.mjs",
+      "passed": true,
+      "durationMs": 217
+    },
+    {
+      "label": "clinical-media-integration.mjs",
+      "passed": true,
+      "durationMs": 1666
+    },
+    {
+      "label": "clinical-media-limits.mjs",
+      "passed": true,
+      "durationMs": 875
+    },
+    {
+      "label": "clinical-media-service.mjs",
+      "passed": true,
+      "durationMs": 246
+    },
+    {
+      "label": "clinical-model.mjs",
+      "passed": true,
+      "durationMs": 61
+    },
+    {
+      "label": "clinical-recovery-filesystem.mjs",
+      "passed": true,
+      "durationMs": 1346
+    },
+    {
+      "label": "clinical-recovery-stream.mjs",
+      "passed": true,
+      "durationMs": 390
+    },
+    {
+      "label": "clinical-recovery.mjs",
+      "passed": true,
+      "durationMs": 1671
+    },
+    {
+      "label": "clinical-signature-reconciliation.mjs",
+      "passed": true,
+      "durationMs": 1082
+    },
+    {
+      "label": "clinical-stock-browser.mjs",
+      "passed": true,
+      "durationMs": 2979
+    },
+    {
+      "label": "clinical-stock.mjs",
+      "passed": true,
+      "durationMs": 1279
+    },
+    {
+      "label": "cloud-error.mjs",
+      "passed": true,
+      "durationMs": 55
+    },
+    {
+      "label": "full-schema-rehearsal.mjs",
+      "passed": true,
+      "durationMs": 987
+    },
+    {
+      "label": "manual-access-administration.mjs",
+      "passed": true,
+      "durationMs": 876
+    },
+    {
+      "label": "panel-renderer.mjs",
+      "passed": true,
+      "durationMs": 52
+    },
+    {
+      "label": "password-recovery.mjs",
+      "passed": true,
+      "durationMs": 52
+    },
+    {
+      "label": "phone.mjs",
+      "passed": true,
+      "durationMs": 53
+    },
+    {
+      "label": "products-ui.mjs",
+      "passed": true,
+      "durationMs": 60
+    },
+    {
+      "label": "public-seo.mjs",
+      "passed": true,
+      "durationMs": 54
+    },
+    {
+      "label": "security-actions.mjs",
+      "passed": true,
+      "durationMs": 56
+    },
+    {
+      "label": "team-model.mjs",
+      "passed": true,
+      "durationMs": 50
+    },
+    {
+      "label": "syntax public/aura/app.js",
+      "passed": true,
+      "durationMs": 48
+    },
+    {
+      "label": "syntax public/aura/features.js",
+      "passed": true,
+      "durationMs": 46
+    },
+    {
+      "label": "syntax standalone/src/main.js",
+      "passed": true,
+      "durationMs": 44
+    },
+    {
+      "label": "syntax standalone/src/runtime-clinical.js",
+      "passed": true,
+      "durationMs": 45
+    },
+    {
+      "label": "syntax standalone/src/clinical-media.js",
+      "passed": true,
+      "durationMs": 47
+    },
+    {
+      "label": "syntax api/clinical-media.mjs",
+      "passed": true,
+      "durationMs": 46
+    },
+    {
+      "label": "audit standalone",
+      "passed": true,
+      "durationMs": 684
+    },
+    {
+      "label": "audit clinical-server",
+      "passed": true,
+      "durationMs": 682
+    },
+    {
+      "label": "audit tests/clinical",
+      "passed": true,
+      "durationMs": 673
+    }
+  ],
+  "scope": "Local synthetic fixtures only. Auth, scanner and Storage services are not remotely validated."
+}

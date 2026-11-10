@@ -41,3 +41,13 @@
 .clinical-optional{margin:14px 0;border:1px solid var(--line);border-radius:8px;padding:0 12px}
 .clinical-optional summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--green);font-weight:600}
 .clinical-optional .field{margin:12px 0}
+.clinical-followup-card{margin:12px 0}
+.clinical-followup-card h4{margin:0 0 8px;font:600 18px Georgia,serif;color:var(--green)}
+.clinical-followup-card span{font-size:13px;color:var(--green);background:var(--bg);padding:4px 8px;border-radius:6px}
+.clinical-followup-card p{margin:10px 0}
+.clinical-followup-list button,#clinicalFollowupForm input,#clinicalFollowupForm select,#clinicalFollowupForm button{min-height:44px}
+#clinicalFollowupForm input,#clinicalFollowupForm select{font-size:16px;max-width:100%}
+.clinical-followup-timegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.clinical-followup-timegrid input{min-width:0;width:100%}
+#clinicalMessage:empty{display:none}
+@media(max-width:360px){.clinical-followup-timegrid{grid-template-columns:minmax(0,1fr)}}

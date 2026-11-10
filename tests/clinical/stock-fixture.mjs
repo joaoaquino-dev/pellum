@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {createFullSchemaFixture} from './full-schema-fixture.mjs';
-export async function createStockFixture(){
- const env=await createFullSchemaFixture(['administrator','owner','writer','reader','outsider']);const {db,accounts,login,rpc}=env;
+export async function createStockFixture(options={}){
+ const env=await createFullSchemaFixture(['administrator','owner','writer','reader','outsider'],options);const {db,accounts,login,rpc}=env;
  await login('administrator','aal2');for(const name of ['owner','writer','reader','outsider'])await rpc('aura_admin_rpc',['authorize',JSON.stringify({email:accounts[name].email,max_clinics:1})]);
  await login('owner');const {id:clinic}=await rpc('aura_rpc',['create',null,JSON.stringify({name:'QA consumo clínico',requestId:randomUUID()})]);
  const base=(await rpc('aura_rpc',['get',clinic,'{}']));base.data.names=['Profissional QA'];base.data.patients=[{id:'patient-qa',name:'Paciente fictícia',phone:'',note:''},{id:'other-patient',name:'Outra paciente fictícia',phone:'',note:''}];

@@ -2,7 +2,7 @@
 import {readFile,readdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {PGlite} from './node_modules/@electric-sql/pglite/dist/index.js';
-export async function createFullSchemaFixture(accountNames=['administrator','solo_a','solo_b']){
+export async function createFullSchemaFixture(accountNames=['administrator','solo_a','solo_b'],{excludeMigrations=[]}={}){
  const db=new PGlite();
  try{
  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
@@ -15,7 +15,7 @@ export async function createFullSchemaFixture(accountNames=['administrator','sol
  create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,owner uuid,owner_id text);
  alter table storage.objects enable row level security;`);
- const migrations=(await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')).sort();
+ const migrations=(await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')&&!excludeMigrations.includes(f)).sort();
  for(const file of migrations){try{await db.exec(await readFile('supabase/migrations/'+file,'utf8'))}catch(error){throw Error('Local migration rehearsal: '+file+' · '+error.code+' · '+error.message)}}
  const accounts={};for(const name of accountNames){
   const user=randomUUID(),session=randomUUID(),email=name+'@example.invalid';accounts[name]={user,session,email};

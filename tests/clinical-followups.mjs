@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {createStockFixture} from './clinical/stock-fixture.mjs';
+const {db,accounts,clinic,login,rpc,clinical,snapshot}=await createStockFixture();let checks=0;
+const eq=(a,b)=>{assert.deepEqual(a,b);checks++};const denied=async(fn,code)=>{await assert.rejects(fn,e=>e.code===code);checks++};
+const call=(action,body={},patient='patient-qa',target=clinic)=>rpc('aura_clinical_followup_rpc',[action,target,patient,JSON.stringify(body)]);
+const evolution=(body={})=>clinical('save',{id:randomUUID(),version:0,kind:'evolution',status:'reviewed',occurredAt:new Date(Date.now()-60000).toISOString(),payload:{summary:'Evolução fictícia',returnDate:'2099-01-10'},requestId:randomUUID(),...body});
+const request=async(id,body={})=>{const list=await call('list'),row=list.items.find(r=>r.id===id);return {id,revision:row.revision,clinicRevision:list.clinicRevision,requestId:randomUUID(),date:'2099-01-10',time:'09:00',duration:60,professionalId:0,procedure:'Retorno',...body}};
+try{
+ eq((await call('list')).items.length,0);const record=await evolution();let list=await call('list');eq(list.items.length,1);eq(list.items[0].dueDate,'2099-01-10');eq(list.items[0].state,'planned');eq((await snapshot()).data.appointments.length,0);
+ await evolution({status:'draft',payload:{summary:'Rascunho de retorno',returnDate:'2099-02-01'}});eq((await call('list')).items.length,1);
+ await login('reader');eq((await call('list')).items[0].canWrite,false);await denied(()=>call('schedule',{id:record.id,revision:1,requestId:randomUUID()}),'42501');await denied(()=>call('complete',{id:record.id,revision:1,requestId:randomUUID()}),'42501');
+ await login('outsider');await denied(()=>call('list'),'42501');await login('administrator','aal2');await denied(()=>call('list',{},null),'42501');
+ await login('owner');await denied(async()=>call('schedule',{...(await request(record.id)),revision:0}),'40001');
+ await denied(async()=>call('schedule',{...(await request(record.id)),clinicRevision:0}),'40001');
+ const schedule=await request(record.id);
+ await db.exec("reset role;create function public.qa_followup_failure() returns trigger language plpgsql as $$begin if new.status='scheduled' then raise exception 'QA write failure';end if;return new;end$$;create trigger zz_qa_followup_failure before update on public.aura_clinical_followups for each row execute function public.qa_followup_failure();");await login('owner');await denied(()=>call('schedule',schedule),'P0001');eq((await snapshot()).data.appointments.length,0);eq((await call('list')).items[0].state,'planned');await db.exec('reset role;drop trigger zz_qa_followup_failure on public.aura_clinical_followups;drop function public.qa_followup_failure()');await login('owner');
+ const scheduled=await call('schedule',schedule);eq(scheduled.ok,true);eq((await snapshot()).data.appointments.length,1);eq((await snapshot()).data.records.length,0);eq((await call('list')).items[0].state,'scheduled');
+ eq(await call('schedule',schedule),scheduled);eq((await snapshot()).data.appointments.length,1);await denied(()=>call('schedule',{...schedule,time:'10:00'}),'22023');await denied(async()=>call('schedule',await request(record.id)),'22023');
+ const second=await evolution();const conflict=await request(second.id);await denied(()=>call('schedule',conflict),'22023');eq((await snapshot()).data.appointments.length,1);eq((await call('list')).items.find(r=>r.id===second.id).state,'planned');
+ const snap=await snapshot();snap.data.appointments[0].status='Cancelado';await rpc('aura_rpc',['save',clinic,JSON.stringify({data:snap.data,revision:snap.revision,requestId:randomUUID()})]);eq((await call('list')).items.find(r=>r.id===record.id).state,'planned');
+ await call('schedule',await request(record.id,{time:'10:00'}));eq((await snapshot()).data.appointments.length,2);eq((await snapshot()).data.appointments[0].status,'Cancelado');
+ const complete=await request(record.id);await call('complete',complete);eq((await call('list')).items.find(r=>r.id===record.id).state,'completed');eq((await snapshot()).data.appointments[1].status,'Agendado');eq((await clinical('history',{id:record.id})).length,1);await call('reopen',await request(record.id));eq((await call('list')).items.find(r=>r.id===record.id).state,'scheduled');
+ // Changing the expected date never silently moves the existing appointment.
+ await evolution({id:record.id,version:1,status:'addendum',reason:'Revisão fictícia da data prevista',payload:{summary:'Evolução fictícia',returnDate:'2099-03-01'}});eq((await call('list')).items.find(r=>r.id===record.id).dueDate,'2099-03-01');eq((await snapshot()).data.appointments[1].date,'2099-01-10');
+ const finished=await snapshot();finished.data.appointments[1].status='Atendido';await rpc('aura_rpc',['save',clinic,JSON.stringify({data:finished.data,revision:finished.revision,requestId:randomUUID()})]);eq((await call('list')).items.find(r=>r.id===record.id).state,'completed');
+ await call('reopen',await request(record.id));eq((await call('list')).items.find(r=>r.id===record.id).state,'planned');eq((await snapshot()).data.appointments[1].status,'Atendido');
+ await evolution({id:second.id,version:1,status:'addendum',reason:'Sem necessidade de retorno',payload:{summary:'Registro fictício',returnDate:''}});eq((await call('list')).items.some(r=>r.id===second.id),false);
+ await denied(()=>db.query('select * from public.aura_clinical_followups'),'42501');
+ await login('owner');await clinical('grant',{userId:accounts.owner.user,professionalId:0,profession:'outra',registry:'QA',write:false,enabled:true,requestId:randomUUID()});await denied(()=>call('schedule',schedule),'42501');
+ await clinical('grant',{userId:accounts.owner.user,professionalId:0,profession:'outra',registry:'QA',write:true,enabled:true,requestId:randomUUID()},'other-patient');await clinical('save',{id:randomUUID(),version:0,kind:'evolution',status:'reviewed',occurredAt:new Date(Date.now()-60000).toISOString(),payload:{summary:'Retorno fictício com acesso restrito',returnDate:'2099-02-01'},requestId:randomUUID()},'other-patient');await clinical('grant',{userId:accounts.owner.user,professionalId:0,profession:'outra',registry:'QA',write:false,enabled:false,requestId:randomUUID()},'other-patient');eq((await call('list',{},null)).items.some(item=>item.patientId==='other-patient'),false);await denied(()=>call('list',{},'other-patient'),'42501');
+ await db.exec('reset role');eq((await db.query('select count(*)::int n from aura_private.clinical_followup_events')).rows[0].n>0,true);await denied(()=>db.exec('delete from aura_private.clinical_followup_events'),'42501');
+ const legacy=await createStockFixture({excludeMigrations:['20261110150345_clinical_followups.sql']});try{
+  const old=await legacy.clinical('save',{id:randomUUID(),version:0,kind:'evolution',status:'reviewed',occurredAt:new Date(Date.now()-60000).toISOString(),payload:{summary:'Retorno fictício anterior à migration',returnDate:'2099-01-11'},requestId:randomUUID()});
+  await legacy.db.exec('reset role');await legacy.db.exec(await readFile('supabase/migrations/20261110150345_clinical_followups.sql','utf8'));await legacy.login('owner');const imported=await legacy.rpc('aura_clinical_followup_rpc',['list',legacy.clinic,'patient-qa','{}']);eq(imported.items[0].id,old.id);eq(imported.items[0].dueDate,'2099-01-11');eq((await legacy.snapshot()).data.appointments.length,0);eq((await legacy.clinical('history',{id:old.id})).length,1);
+ }finally{await legacy.db.close()}
+ console.log(`PASS: ${checks} clinical-followup SQL checks; forecast from review, no auto-booking, permissions, atomic schedule/conflict, replay, cancellation/rebooking, completion/reopening, date changes without moving appointments and immutable audit. Local SQL only.`);
+}catch(error){throw Error('Followup QA: '+error.code+' '+error.message,{cause:error instanceof assert.AssertionError?error:undefined})}
+finally{await db.close()}

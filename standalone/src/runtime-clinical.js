@@ -5,20 +5,20 @@ window.AURA_CONNECT=function(options){
  const model=service.model;
  const dialog=document.createElement('dialog');dialog.id='clinicalDialog';dialog.className='clinical-dialog';
  dialog.setAttribute('aria-labelledby','clinicalTitle');document.body.append(dialog);
- let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null,mediaView=null;
+ let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null,mediaView=null,followupView=null;
  const find=s=>dialog.querySelector(s);
  const button=(label,fn,secondary=true)=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(secondary)b.className='secondary';b.onclick=fn;return b};
  const info=text=>{const el=find('#clinicalMessage');if(el)el.textContent=text};
  const safeClose=()=>{
   if(busy||activeWriter?.state.pending||mediaView?.pending)return info('Aguarde o salvamento antes de fechar.');
   if(dirty&&!confirm('Há um rascunho não salvo nesta tela. Fechar e descartar essas alterações?'))return;
-  mediaView?.dispose();mediaView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
+  mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
  };
  dialog.addEventListener('cancel',e=>{e.preventDefault();safeClose()});
  window.addEventListener('pellum:session-ended',()=>{
   // Logout/expiry must clear already displayed clinical data even if a user
   // cancels a navigation prompt from another part of the legacy application.
-  epoch++;clearTimeout(timer);mediaView?.dispose();mediaView=null;dirty=false;busy=false;activeWriter=null;
+  epoch++;clearTimeout(timer);mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;dirty=false;busy=false;activeWriter=null;
   entries=[];summaryEntries=[];templates=[];access=null;patientId=null;service.actorId=null;
   if(dialog.open)dialog.close();dialog.replaceChildren();
  });
@@ -51,8 +51,7 @@ window.AURA_CONNECT=function(options){
   bar.append(button('Gerenciar acesso clínico',manageAccess));
   bar.append(button('Documentos preparados',documentList));
   if(access?.can_export){bar.append(button('Exportar documento clínico',()=>exportChart('html')));bar.append(button('Exportar dados completos',()=>exportChart('json')))}
-  bar.append(button('Agendar retorno',()=>{if(dirty)return;safeClose();appointmentForm();const f=$('#appointmentform');if(f)f.elements.patient.value=patientIdForReturn}));
-  const patientIdForReturn=patientId;
+  bar.append(button('Retornos',()=>showFollowups(patientId)));
   return bar;
  }
  function timeline(chart){
@@ -197,7 +196,7 @@ window.AURA_CONNECT=function(options){
    form.readCustomForm=review=>selected?{formTemplateId:selected.id,formTemplateVersion:selected.version,formQuestions:selected.schema,formTemplateName:selected.name,formAnswers:questionnaire.read(review)}:{};
   }
   // Future appointments/return dates are allowed; birth dates and event dates are not.
-  form.elements.returnDate?.removeAttribute('max');
+  form.elements.returnDate?.removeAttribute('max');if(form.elements.returnDate){const note=document.createElement('small');note.textContent='A data prevista vira um lembrete após revisar a evolução. Ela não muda horários já agendados.';form.elements.returnDate.closest('label').append(note)}
   if(['procedure','evolution','adverse_event'].includes(kind)){
    form.insertAdjacentHTML('beforeend',`<label class="field">Plano relacionado<select name="planId"><option value="">Sem vínculo</option>${entries.filter(e=>e.kind==='plan').map(e=>`<option value="${esc(e.id)}" ${e.id===payload.planId?'selected':''}>${esc(e.payload.summary||e.payload.objective||'Plano')} · v${e.version}</option>`).join('')}</select></label><label class="field">Agendamento relacionado<select name="appointmentId"><option value="">Sem vínculo</option>${state.appointments.filter(a=>a.patient===patientId).map(a=>`<option value="${esc(a.id)}" ${a.id===payload.appointmentId?'selected':''}>${esc(a.date)} · ${esc(a.procedure)}</option>`).join('')}</select></label>`);
   }
@@ -335,6 +334,15 @@ window.AURA_CONNECT=function(options){
   }catch(e){if(e.code&&e.code!=='40001')pendingTemplate=null;info(e.message)}finally{busy=false;save.disabled=false;for(const input of form.querySelectorAll('input,textarea,select'))input.disabled=false}};
   info('Adapte as perguntas ao procedimento. Não torne todo o histórico obrigatório.');
  }
+ function showFollowups(target=null){
+  if(busy||dirty)return;
+  if(target===null){if(dialog.open)return;patientId=null;epoch++;shell();find('#clinicalTitle').textContent='Retornos da clínica';dialog.showModal()}
+  clearTimeout(timer);activeWriter=null;const token=++epoch;followupView?.dispose();
+  followupView=service.mountClinicalFollowups({container:find('#clinicalBody'),service,patient:target,getState:()=>state,refreshClinic:()=>window.AURA_REFRESH_CLINIC(),onBusy:value=>{if(token===epoch)busy=value},onDirty:value=>{if(token===epoch)dirty=value},onBack:()=>{followupView?.dispose();followupView=null;dirty=false;if(target===null)safeClose();else{epoch++;reload()}},onOpenChart:id=>{followupView?.dispose();followupView=null;dirty=false;safeClose();open(id)}});
+  info('');
+ }
+ const previousClinicalAgenda=agenda;agenda=function(){previousClinicalAgenda();const card=document.createElement('div');card.className='card sectiongap';const title=document.createElement('h2');title.textContent='Retornos';const text=document.createElement('p');text.textContent='Consulte os retornos previstos e organize os próximos horários.';card.append(title,text,button('Ver retornos',()=>showFollowups()));$('#app').append(card)};
+ if(page==='agenda')agenda();
  const beforeList=patientsList;patientsList=function(){beforeList();const removed=$('#showRemoved')?.checked;const ps=state.patients.filter(p=>!!p.deleted===!!removed&&p.name.toLowerCase().includes($('#patientSearch').value.toLowerCase()));$('#patientsList').querySelectorAll('tbody tr').forEach((row,i)=>{const p=ps[i];if(!p)return;const b=button('Prontuário',()=>open(p.id));b.dataset.clinicalPatient=p.id;(row.querySelector('.patient-action-group')||row.lastElementChild).append(b)})};
  if(page==='pacientes')patientsList();
 };

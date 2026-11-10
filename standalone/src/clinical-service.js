@@ -2,8 +2,13 @@ import * as model from './clinical-model.js';
 import {renderClinicalExport} from './clinical-document.js';
 import {createClinicalMediaClient,mountClinicalMedia} from './clinical-media.js';
 import {mountClinicalQuestionnaire} from './clinical-questionnaire.js';
+import {mountClinicalFollowups} from './clinical-followups.js';
 export function createClinicalService(sb,getClinic,verifyMFA,{mediaEnabled=false}={}){
- return {model,renderClinicalExport,mediaEnabled,mountClinicalQuestionnaire,mediaClient:createClinicalMediaClient(sb,getClinic,verifyMFA),mountClinicalMedia,actorId:null,
+ return {model,renderClinicalExport,mediaEnabled,mountClinicalQuestionnaire,mountClinicalFollowups,mediaClient:createClinicalMediaClient(sb,getClinic,verifyMFA),mountClinicalMedia,actorId:null,
+  async followupCall(action,patient=null,body={}){
+   let response;try{response=await sb.rpc('aura_clinical_followup_rpc',{p_action:action,p_clinic:getClinic(),p_patient:patient,p_body:body})}catch{throw Error('Não foi possível confirmar o retorno. Tente novamente.')}
+   if(response.error){const messages={FOLLOWUP_ALREADY_SCHEDULED:'Este retorno já possui um horário ou está concluído. Atualize a lista para conferir.','Conflito de agendamentos':'Esse horário já está ocupado. Escolha outro.'};throw Object.assign(Error(messages[response.error.message]||model.clinicalError(response.error)),{code:response.error.code})}return response.data;
+  },
   async formTemplateCall(action,patient,body={}){
    let response;try{response=await sb.rpc('aura_clinical_form_template_rpc',{p_action:action,p_clinic:getClinic(),p_patient:patient,p_body:body})}catch{throw Error('Não foi possível confirmar o modelo. Tente novamente com as mesmas informações.')}
    if(response.error)throw Object.assign(Error(model.clinicalError(response.error)),{code:response.error.code});return response.data;

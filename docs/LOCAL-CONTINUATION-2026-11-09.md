@@ -63,3 +63,5 @@ Continuidade de 10/11: CLINICAL-STOCK-2026-11-10.md implementa materiais diretam
 Orientação posterior e entrega: CLINICAL-CHART-2026-11-10.md prioriza ficha textual e adia fotos. A configuração padrão esconde a entrada de imagens; a ficha ganhou detalhes opcionais por avaliação/procedimento e conteúdo de termos, preservados no banco e na exportação. Relatórios anteriores de mídia registram trabalho histórico, não uma obrigação de habilitá-la nesta versão.
 
 CLINICAL-FORM-TEMPLATES-2026-11-10.md registra o editor posterior de modelos reutilizáveis/versionados de procedimentos e minutas, com schema capturado no atendimento, escopos e exportação. Resolve a pendência de editor citada no relatório anterior, sem habilitar assinaturas ou fotos.
+
+CLINICAL-FOLLOWUPS-2026-11-10.md registra previsões a partir da evolução, listas de retornos, agendamento na agenda existente, conclusão/reabertura e auditoria. Sem mensagens automáticas ou serviços novos; validação local, ainda não publicada.
