@@ -68,13 +68,64 @@ window.AURA_CONNECT=function(options){
    const search=find('#clinicalSearch').value.trim().toLocaleLowerCase('pt-BR'),kind=find('#clinicalKind').value;
    list.replaceChildren();
    const filtered=entries.filter(e=>(!kind||e.kind===kind)&&(!search||JSON.stringify(e.payload).toLocaleLowerCase('pt-BR').includes(search)));
-   for(const e of filtered){const card=entryCard(e);const actions=document.createElement('div');actions.className='toolbar';actions.append(button('Versões',()=>history(e)));if(access?.can_write&&e.authorId===service.actorId){actions.append(button(e.finalized?'Adicionar adendo':'Continuar rascunho',()=>edit(e.kind,e)));if(e.finalized){const request={id:crypto.randomUUID(),entryId:e.id,version:e.version,kind:e.kind==='consent'?({'Procedimento':'procedure_consent','Fotografia para cuidado':'clinical_photo_consent','Uso externo de imagem':'advertising_consent'}[e.payload.purpose]):'professional_record'};actions.append(button('Preparar documento · sem assinatura',async()=>{if(busy)return;busy=true;try{await service.documentCall('prepare',patientId,request);info('Fonte versionada preparada. Nenhum documento foi enviado ou assinado. Consulte Documentos preparados.')}catch(error){info(error.message)}finally{busy=false}}))}}card.append(actions);list.append(card)}
+   for(const e of filtered){const card=entryCard(e);const actions=document.createElement('div');actions.className='toolbar';actions.append(button('Versões',()=>history(e)));if(access?.can_write&&e.authorId===service.actorId){actions.append(button(e.finalized?'Adicionar adendo':'Continuar rascunho',()=>edit(e.kind,e)));if(e.finalized){const request={id:crypto.randomUUID(),entryId:e.id,version:e.version,kind:e.kind==='consent'?({'Procedimento':'procedure_consent','Fotografia para cuidado':'clinical_photo_consent','Uso externo de imagem':'advertising_consent'}[e.payload.purpose]):'professional_record'};actions.append(button('Preparar documento · sem assinatura',async()=>{if(busy)return;busy=true;try{await service.documentCall('prepare',patientId,request);info('Fonte versionada preparada. Nenhum documento foi enviado ou assinado. Consulte Documentos preparados.')}catch(error){info(error.message)}finally{busy=false}}))}}if(access?.can_write&&e.kind==='procedure'&&e.finalized&&e.authorId===service.actorId&&!e.payload.financialRecordId&&e.payload.materialsOrigin!=='clinical_stock')actions.append(button('Adicionar materiais',()=>consumeMaterials(e)));card.append(actions);list.append(card)}
    if(!filtered.length){const p=document.createElement('p');p.className='empty';p.textContent=entries.length?'Nenhum registro corresponde à busca.':'Comece com a identificação ou uma nova anamnese.';list.append(p)}
   };
   find('#clinicalSearch').oninput=draw;find('#clinicalKind').onchange=draw;draw();
   if(entries.length&&entries.length%100===0)body.append(button('Carregar registros anteriores',async()=>{
    const last=entries.at(-1);try{const next=await service.call('list',patientId,{before:last.createdAt,beforeId:last.id});entries.push(...next.filter(e=>!entries.some(x=>x.id===e.id)));timeline(chart)}catch(e){info(e.message)}
   }));
+ }
+ async function consumeMaterials(entry){
+  if(busy||dirty)return;clearTimeout(timer);const token=++epoch;busy=true;
+  let options;
+  try{await window.AURA_REFRESH_CLINIC();options=await service.stockCall('options',patientId)}catch(error){if(token===epoch)info(error.message);return}finally{busy=false}
+  if(token!==epoch)return;
+  const body=find('#clinicalBody');body.replaceChildren();
+  const form=document.createElement('form');form.id='clinicalStockForm';
+  form.innerHTML='<h3>Materiais usados</h3><p>Escolha o material e informe quanto foi usado.</p>';
+  const rows=document.createElement('div');form.append(rows);let rowNumber=0;
+  const addRow=()=>{
+   if(rows.children.length>=20)return info('Você pode registrar até 20 materiais neste atendimento.');
+   const number=++rowNumber,row=document.createElement('fieldset');row.className='clinical-stock-row';row.dataset.stockRow='';
+   const legend=document.createElement('legend');legend.textContent='Material '+number;row.append(legend);
+   const fields=document.createElement('div');fields.className='clinical-stock-fields';
+   const productLabel=document.createElement('label');productLabel.className='field';productLabel.textContent='Produto ou material';
+   const select=document.createElement('select');select.dataset.stockProduct='';select.setAttribute('aria-label','Produto ou material '+number);select.append(new Option('Selecione…',''));
+   for(const product of options.products)select.append(new Option(product.name+' · lote '+(product.lot||'não informado'),product.id));
+   if(options.products.length===1)select.value=options.products[0].id;productLabel.append(select);
+   const quantityLabel=document.createElement('label');quantityLabel.className='field';const quantityText=document.createElement('span');quantityLabel.append(quantityText);
+   const input=document.createElement('input');input.type='number';input.min='0.001';input.step='0.001';input.inputMode='decimal';input.dataset.stockQuantity='';input.setAttribute('aria-label','Quantidade utilizada '+number);quantityLabel.append(input);fields.append(productLabel,quantityLabel);row.append(fields);
+   const detail=document.createElement('small');row.append(detail);
+   const update=()=>{const product=options.products.find(p=>p.id===select.value);quantityText.textContent=product?'Quantidade usada ('+product.unit+')':'Quantidade usada';detail.textContent=product?'Saldo informado: '+product.balance+' '+product.unit+' · Material de '+product.ownerName+(product.expiry?' · Validade: '+product.expiry.split('-').reverse().join('/'):''):''};select.onchange=update;update();
+   if(number>1){const remove=button('Remover este material',()=>{row.remove();dirty=true});remove.dataset.stockControl='';row.append(remove)}rows.append(row);
+  };
+  if(options.products.length){addRow();const another=button('Adicionar outro material',addRow);another.dataset.stockControl='';form.append(another)}
+  if(!options.products.length)form.insertAdjacentHTML('beforeend','<p>Nenhum lote ativo e dentro da validade foi encontrado. O atendimento pode ser salvo normalmente. Lembre-se de revisar seu estoque.</p>');
+  let request=null,committed=false,failed=false,result=null;
+  const back=button('Voltar ao prontuário',()=>{if(busy)return;if(!request&&dirty&&!confirm('Voltar sem salvar os materiais?'))return;if(request&&!committed&&!confirm('Os materiais podem já ter sido salvos. Voltar para conferir o histórico?'))return;dirty=false;epoch++;reload()});
+  const submit=button('Salvar materiais',async()=>{
+   if(busy)return;
+   if(!request){
+    if(!form.reportValidity())return;
+    const items=Array.from(rows.children).filter(row=>row.querySelector('input').value!=='').map(row=>({id:row.querySelector('select').value,qty:Number(row.querySelector('input').value)}));
+    if(!items.length)return info('Informe a quantidade de pelo menos um material.');
+    if(items.some(item=>!item.id))return info('Escolha o produto ou material utilizado.');
+    if(new Set(items.map(item=>item.id)).size!==items.length)return info('O mesmo lote foi escolhido duas vezes. Junte a quantidade em uma única linha.');
+    request={entryId:entry.id,version:entry.version,revision:options.revision,items,requestId:crypto.randomUUID()};
+   }
+   busy=true;dirty=true;submit.disabled=true;back.disabled=true;for(const input of form.querySelectorAll('input,select,[data-stock-control]'))input.disabled=true;
+   try{
+    if(!committed){result=await service.stockCall('consume',patientId,request);committed=true}
+    await window.AURA_REFRESH_CLINIC();if(token!==epoch)return;dirty=false;epoch++;await reload();info(result.stockReviewRequired?'Materiais registrados. Lembre-se de revisar seu estoque.':'Materiais registrados.');
+   }catch(error){
+    if(token!==epoch)return;info(error.message);
+    if(['22023','40001','42501'].includes(error.code)){failed=true;info(error.message+' Volte ao prontuário para conferir antes de outra tentativa.')}
+    else submit.textContent=committed?'Atualizar tela':'Tentar salvar novamente';
+   }finally{busy=false;if(token===epoch){submit.disabled=failed;back.disabled=false}}
+  },false);
+  submit.disabled=!options.products.length;form.addEventListener('input',()=>{dirty=true});form.onsubmit=event=>{event.preventDefault();submit.click()};const actions=document.createElement('div');actions.className='actions';actions.append(back,submit);form.append(actions);body.append(form);
+  info('Se o saldo não conferir, você poderá salvar normalmente. Lembre-se de revisar seu estoque.');
  }
  function entryCard(entry){
   const card=document.createElement('article');card.className='card clinical-entry';
@@ -86,6 +137,7 @@ window.AURA_CONNECT=function(options){
   if(p.nursing)model.nursingSteps.forEach((label,i)=>{if(p.nursing[i])card.insertAdjacentHTML('beforeend',`<p class="clinical-text"><b>${esc(label)}:</b> ${esc(p.nursing[i])}</p>`)});
   if(p.imagePurposes?.length)card.insertAdjacentHTML('beforeend',`<p><b>Finalidades de imagem relatadas:</b> ${esc(p.imagePurposes.join(', '))}</p>`);
   for(const m of p.materials||[])card.insertAdjacentHTML('beforeend',`<p>Material: ${esc(m.name||m.id)} · lote ${esc(m.lot||'não informado')} · ${esc(m.qty)} ${esc(m.unit||'')} · validade ${esc(m.expiry||'não informada')}</p>`);
+  if(p.stockReview==='pending')card.insertAdjacentHTML('beforeend','<small>Lembre-se de revisar seu estoque.</small>');
   return card;
  }
  async function documentList(){
@@ -121,6 +173,7 @@ window.AURA_CONNECT=function(options){
    form.insertAdjacentHTML('beforeend',`<label class="field">Plano relacionado<select name="planId"><option value="">Sem vínculo</option>${entries.filter(e=>e.kind==='plan').map(e=>`<option value="${esc(e.id)}" ${e.id===payload.planId?'selected':''}>${esc(e.payload.summary||e.payload.objective||'Plano')} · v${e.version}</option>`).join('')}</select></label><label class="field">Agendamento relacionado<select name="appointmentId"><option value="">Sem vínculo</option>${state.appointments.filter(a=>a.patient===patientId).map(a=>`<option value="${esc(a.id)}" ${a.id===payload.appointmentId?'selected':''}>${esc(a.date)} · ${esc(a.procedure)}</option>`).join('')}</select></label>`);
   }
   if(kind==='procedure'){
+   form.insertAdjacentHTML('beforeend','<small>Lembre-se de revisar seu estoque. O saldo não impede salvar este atendimento.</small>');
    form.insertAdjacentHTML('beforeend',`<label class="field">Atendimento com consumo já registrado<select name="financialRecordId" ${entry?.finalized?'disabled':''}><option value="">Sem vínculo de estoque</option>${state.records.filter(r=>r.patient===patientId).map(r=>`<option value="${esc(r.id)}" ${r.id===payload.financialRecordId?'selected':''}>${esc(r.date)} · ${esc(r.procedure)}</option>`).join('')}</select></label><p>O vínculo preserva os materiais do atendimento. O consumo é registrado uma única vez no fluxo de atendimento existente.</p>`);
   }
   if(kind==='anamnesis'){

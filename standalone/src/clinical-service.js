@@ -3,6 +3,11 @@ import {renderClinicalExport} from './clinical-document.js';
 import {createClinicalMediaClient,mountClinicalMedia} from './clinical-media.js';
 export function createClinicalService(sb,getClinic,verifyMFA){
  return {model,renderClinicalExport,mediaClient:createClinicalMediaClient(sb,getClinic,verifyMFA),mountClinicalMedia,actorId:null,
+  async stockCall(action,patient,body={}){
+   let response;try{response=await sb.rpc('aura_clinical_stock_rpc',{p_action:action,p_clinic:getClinic(),p_patient:patient,p_body:body})}catch{throw Error('Não foi possível confirmar o consumo. Repita a mesma solicitação antes de iniciar outro envio.')}
+   if(response.error)throw Object.assign(Error(model.clinicalStockError(response.error)),{code:response.error.code});
+   return response.data;
+  },
   async documentCall(action,patient,body={},retry=true){
    let response;try{response=await sb.rpc('aura_clinical_document_rpc',{p_action:action,p_clinic:getClinic(),p_patient:patient,p_body:body})}catch{throw Error(model.clinicalError(null))}
    if(response.error){if(retry&&response.error.message?.includes('CLINICAL_MFA_REQUIRED')){await verifyMFA();return this.documentCall(action,patient,body,false)}throw Object.assign(Error(model.clinicalError(response.error)),{code:response.error.code})}

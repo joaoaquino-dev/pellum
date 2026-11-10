@@ -31,3 +31,10 @@
 .clinical-image-modal input[type=range]{width:100%;accent-color:#345e4d;min-height:44px}
 .clinical-image-modal :focus-visible{outline:2px solid #c39960;outline-offset:2px}
 @media(min-width:760px){.clinical-media-upload{grid-template-columns:1fr 1fr}.clinical-media-upload small,.clinical-media-upload button{grid-column:1/-1}}
+.clinical-stock-row{min-width:0;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:8px}
+.clinical-stock-row legend{padding:0 6px;color:var(--green);font-weight:600}
+.clinical-stock-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}
+.clinical-stock-row input,.clinical-stock-row select{min-height:44px;font-size:16px;width:100%;min-width:0}
+#clinicalStockForm button{min-height:44px}
+.clinical-stock-row small{display:block;line-height:1.5;margin:4px 0}
+@media(max-width:640px){.clinical-stock-fields{grid-template-columns:minmax(0,1fr)}}

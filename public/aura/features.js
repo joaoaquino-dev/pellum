@@ -1,6 +1,15 @@
 window.AURA_CONNECT=function({api,cloud}){
 let rev=cloud.revision,queue=Promise.resolve(),blocked=false,pending=0,lastSnapshot=JSON.stringify(state);
 window.AURA_CLINIC_SYNC=()=>({pending,blocked,revision:rev});
+window.AURA_REFRESH_CLINIC=async()=>{
+ if(pending||blocked)throw Error('Aguarde o salvamento da clínica antes de registrar materiais.');
+ const before=JSON.stringify(state),beforeRevision=rev;
+ const fresh=await api();
+ if(pending||blocked||rev!==beforeRevision||JSON.stringify(state)!==before)throw Error('A clínica mudou enquanto o estoque era atualizado. Preserve suas alterações antes de continuar.');
+ if(!fresh?.data||fresh.clinic?.id!==cloud.clinic.id)throw Error('Não foi possível atualizar o estoque desta clínica.');
+ state=fresh.data;state.products??=[];state.expenses??=[];rev=fresh.revision;lastSnapshot=JSON.stringify(state);cloud.data=state;cloud.revision=rev;window.AURA_DATA=state;
+ route();status('Atualizado da nuvem · '+cloud.clinic.name);return rev;
+};
 state.products??=[];state.expenses??=[];
 const status=s=>$('#cloudStatus').textContent=s;
 status('Conectada · '+cloud.clinic.name+' · '+cloud.user);$('header .avatar').textContent=cloud.user.slice(0,2).toUpperCase();$('.workspace div').textContent=cloud.clinic.name;

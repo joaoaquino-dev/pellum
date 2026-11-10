@@ -78,6 +78,11 @@ export function clinicalError(error){
  return 'Não foi possível salvar ou carregar. Confira a conexão e tente novamente. Seu rascunho continua nesta tela.';
 }
 
+export function clinicalStockError(error){
+ const messages={CLINICAL_STOCK_UNAVAILABLE:'Esse lote não está mais disponível. Volte e confira os materiais cadastrados.',CLINICAL_STOCK_EXPIRED:'O lote está vencido. Não foi registrada nenhuma baixa.',CLINICAL_STOCK_ALREADY_RECORDED:'Os materiais deste atendimento já foram registrados. Consulte o histórico.',CLINICAL_STOCK_REVIEW_REQUIRED:'Revise e finalize o procedimento antes de registrar os materiais.',CLINICAL_STOCK_HISTORY_PROTECTED:'Os materiais registrados no atendimento precisam ser preservados. Confira o histórico antes de restaurar os dados.'};
+ return messages[error?.message]||clinicalError(error);
+}
+
 // Serializes autosave and explicit review. A failed request is retried with the same
 // idempotency key and exact body before any newer edit is sent.
 export function createClinicalWriter({send,id,kind,version=0,requestId=()=>crypto.randomUUID(),onState=()=>{}}){

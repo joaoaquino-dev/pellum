@@ -57,3 +57,5 @@ Mensalidades continuam por recebimento externo e liberação manual. Nada foi co
 Continuidade posterior desta data: BUSINESS-REGRESSION-2026-11-09.md registra a correção da baixa de estoque e da validação de custo na edição, testes completos dos fluxos de gestão e a constatação sobre os poderes amplos de gestoras. A nova execução consolidada tem 34 arquivos de testes aprovados; a evidência anterior de 32 arquivos foi preservada como registro histórico.
 
 OWNER-PROTECTION-2026-11-09.md registra a proteção local posterior contra remoção/reassociação do vínculo da proprietária e contra exclusão da clínica por outra gestora. Preserva retenção clínica, exclusão autorizada e os demais poderes legados; ainda não aplicada remotamente.
+
+Continuidade de 10/11: CLINICAL-STOCK-2026-11-10.md implementa materiais diretamente pelo prontuário, sem lançamento financeiro obrigatório. Saldo insuficiente gera lembrete sem impedir o registro, seguindo a orientação mais recente. A interface foi simplificada para celular/tablet/notebook; sem contratação ou aplicação remota.
