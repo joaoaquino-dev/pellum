@@ -5,12 +5,12 @@ import {createMediaHandler} from '../../clinical-server/media-handler.js';
 import {sha256,mediaError} from '../../clinical-server/files.js';
 import {randomUUID,randomBytes,createHmac,timingSafeEqual} from 'node:crypto';
 export async function createMediaFixture(){
- const env=await createMediaTestDatabase();const {db,ids,login,rpc,mediaRpc,workerCommit}=env;
+ const env=await createMediaTestDatabase({withLimits:true});const {db,ids,login,rpc,mediaRpc,workerCommit}=env;
  const objects=new Map(),signed=new Map(),logs=[];let origin='http://127.0.0.1',clock=Date.now(),failPut=false,revokeOnPut=false,loseResponse=false;
  const secret=randomBytes(32);
  const gateway={
   async authenticate(token){const [name,aal='aal1']=token.split('-');if(!['owner','other','outsider'].includes(name))throw mediaError('MEDIA_ACCESS_DENIED',403);return {name,aal}},
-  async rpc(ctx,action,clinic,patient,body){await login(ctx.name,ctx.aal);try{return await mediaRpc(action,body,patient,clinic)}catch(error){throw mediaError(error.message==='CLINICAL_MFA_REQUIRED'?'CLINICAL_MFA_REQUIRED':error.code==='42501'?'MEDIA_ACCESS_DENIED':error.code==='22023'?'MEDIA_INVALID':'MEDIA_SERVICE_UNAVAILABLE',error.code==='42501'?403:422)}},
+  async rpc(ctx,action,clinic,patient,body){await login(ctx.name,ctx.aal);try{return action==='usage'?(await db.query('select public.aura_clinical_media_usage($1) result',[clinic])).rows[0].result:await mediaRpc(action,body,patient,clinic)}catch(error){if(['MEDIA_BUDGET_NOT_CONFIGURED','MEDIA_BUDGET_EXCEEDED'].includes(error.message))throw mediaError(error.message,409);throw mediaError(error.message==='CLINICAL_MFA_REQUIRED'?'CLINICAL_MFA_REQUIRED':error.code==='42501'?'MEDIA_ACCESS_DENIED':error.code==='22023'?'MEDIA_INVALID':'MEDIA_SERVICE_UNAVAILABLE',error.code==='42501'?403:422)}},
   async commit(ctx,id,evidence){try{const result=await workerCommit(id,evidence,{name:ctx.name,aal:ctx.aal});if(loseResponse){loseResponse=false;throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503)}return result}catch(error){if(error.code==='42501')throw mediaError('MEDIA_ACCESS_DENIED',403);throw error}},
   async putOnce(bucket,path,bytes,mime){if(failPut){failPut=false;throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503)}const key=bucket+'/'+path,previous=objects.get(key);if(previous&&sha256(previous.bytes)!==sha256(bytes))throw mediaError('MEDIA_INTEGRITY',409);if(!previous)objects.set(key,{bytes:Buffer.from(bytes),mime});if(revokeOnPut){revokeOnPut=false;await login();await rpc('grant',{userId:ids.owner,professionalId:0,profession:'enfermagem',write:true,export:true,enabled:false,requestId:randomUUID()})}},
   async download(bucket,path){const stored=objects.get(bucket+'/'+path);if(!stored)throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503);return stored.bytes},

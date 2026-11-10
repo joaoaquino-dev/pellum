@@ -27,7 +27,9 @@ clinical-server/signatures.js fornece um coordenador sem adaptador padrão. Para
 
 O coordenador preserva estados preparado/envio/envelope/recebido não validado/validado/recusado/expirado/cancelado/falha. Um callback de “concluído” não produz estado validado sem um verificador independente. Eventos têm hash de corpo, chave por provedor/evento e vínculo documental; replays diferentes são recusados, eventos tardios não reabrem estados terminais e preservam hashes anteriores.
 
-Ainda implementar no adaptador escolhido: autenticação exata do webhook, reconciliador por consulta após timeout/callback anterior ao vínculo, tratamento de filas/retries, identidades reais, renderer final aprovado e verificador criptográfico efetivo. O adaptador de Repository/Archive para serviços remotos não está configurado. Não há endpoint público de assinatura nesta fase.
+O coordenador oferece reconciliação por consulta com nova autorização, vínculo persistido e validação compartilhada. Sem vínculo, informa a necessidade de repetição explícita do despacho; não envia outro envelope automaticamente. Resultados inconclusivos do verificador permanecem recebidos não validados; callbacks repetidos de estados terminais não repetem downloads. IDs de eventos são derivados de maneira estável e limitada. A migration adicional de consulta por documento foi aplicada somente em testes locais.
+
+Ainda implementar no adaptador escolhido: autenticação exata do webhook, consulta autenticada ao fornecedor, tratamento operacional de filas/retries, identidades reais, renderer final aprovado e verificador criptográfico efetivo. O adaptador de Repository/Archive para serviços remotos não está configurado. Não há endpoint público de assinatura nesta fase. A integração externa permanece adiada pelas decisões de orçamento do proprietário.
 
 ## Requisitos externos de validação
 

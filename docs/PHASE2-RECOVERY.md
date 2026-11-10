@@ -8,7 +8,7 @@ O teste tests/clinical-recovery.mjs cria banco PostgreSQL isolado e dados sinté
 
 A recuperação autentica o pacote inteiro antes de interpretar caminhos/expor conteúdo, confere tamanhos/hashes e recusa chave incorreta, adulteração, truncamento, caminhos com travessia e nomes duplicados. Restaura o dump em uma segunda instância PostgreSQL e compara fontes clínicas, eventos e hashes das duas versões da imagem. O destino de objetos do teste é local e simulado; não é o serviço Storage remoto. Nenhum documento realmente assinado foi usado.
 
-clinical-server/backup.js é uma ferramenta de exercício local limitada a 64 MiB de conteúdo e 100 MiB de pacote. Não possui conexão de banco, agendamento, upload remoto, exclusão ou API de restauração em produção. Não representa uma rotina comercial para bases grandes. Antes de adotá-la em operação, desenvolver/validar o fluxo de streaming e o gerenciador de chaves para o volume contratado. Não pedir chaves pelo chat nem incluí-las no pacote ou Git.
+clinical-server/backup.js é uma ferramenta de exercício local limitada a 64 MiB de conteúdo e 100 MiB de pacote. Não possui conexão de banco, agendamento, upload remoto, exclusão ou API de restauração em produção. Não representa uma rotina comercial para bases grandes. A continuidade adicionou o formato V2 em clinical-server/backup-stream.js e o destino separado em clinical-server/backup-filesystem.js, ensaiados com 80 MiB sintéticos e recuperação de PostgreSQL dos arquivos restaurados; detalhes e limitações em LOCAL-CONTINUATION-2026-11-09.md. O gerenciador de chaves e a operação externa continuam pendentes. Não pedir chaves pelo chat nem incluí-las no pacote ou Git.
 
 ## Estratégia externa a implementar e aprovar
 

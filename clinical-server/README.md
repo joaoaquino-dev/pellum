@@ -17,7 +17,7 @@ Sharp é necessário para decodificar pixels e remover metadados da apresentaç�
 
 ## Configuração futura de homologação
 
-Provisionar somente após aprovação das operações e despesas descritas em docs/STAGING-AND-SIGNATURES-2026-11-09.md. Além das variáveis públicas segregadas já documentadas:
+As decisões atuais estão em docs/OWNER-DECISIONS-2026-11-09.md: R$0 em novas contratações. Custos sugeridos em docs/STAGING-AND-SIGNATURES-2026-11-09.md são históricos e não foram autorizados. Provisionar ambiente segregado somente com autorização específica. Além das variáveis públicas segregadas já documentadas:
 
 | Variável somente de servidor | Conteúdo |
 | --- | --- |
@@ -41,6 +41,8 @@ Não foi contratado nem iniciado um serviço ClamAV. Os testes usam um veredito 
 ## Integridade, falhas e acesso
 
 O original validado é preservado byte a byte com SHA-256. A apresentação é JPEG orientado/redimensionado até 2048 px, sem EXIF/GPS ou retoque. Uma repetição usa o mesmo ID e metadados; não sobrescreve objetos existentes e confere seus hashes. Só após todas as etapas o registro passa de pending a ready. PDF é entregue como download, sem execução inline. Exportar original exige permissão específica e AAL2, com nova conferência do hash.
+
+A apresentação usa qualidade 90, mozjpeg e cor 4:4:4; a redução varia por foto e não altera o original. A migration local de limites reserva bytes/quantidade/pendências por clínica e ajusta a reserva após concluir. Sem orçamento interno configurado pelo operador, o banco recusa novos uploads. A consulta agregada é exclusiva do proprietário; não consulta faturamento do provedor. Nenhuma quota foi aplicada remotamente.
 
 URLs de apresentação expiram em 30 segundos. Revogar acesso impede novas emissões; links já emitidos podem continuar válidos até expirar, assim como pixels já carregados podem permanecer na tela do destinatário. Não alegar revogação instantânea. Nenhuma URL assinada entra em localStorage/sessionStorage. Políticas e validação remotas ainda precisam de ensaio pelo Storage real. [Signed URLs](https://supabase.com/docs/reference/javascript/storage-from-createsignedurl), [RLS do Storage](https://supabase.com/docs/guides/storage/security/access-control).
 

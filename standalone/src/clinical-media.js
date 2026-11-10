@@ -9,7 +9,7 @@ export function createClinicalMediaClient(sb,getClinic,verifyMFA,{fetcher=fetch}
   let response;try{response=await fetcher('/api/clinical-media',{method:'POST',headers,body:payload,cache:'no-store'})}catch{throw Error('Não foi possível concluir o envio. O arquivo continua selecionado; tente novamente.')}
   if(!response.ok){let error;try{error=await response.json()}catch{}
    if(retry&&error?.code==='CLINICAL_MFA_REQUIRED'){await verifyMFA();return request(action,patient,body,file,false)}
-   const safe={MEDIA_DISABLED:'Fotos e anexos aguardam configuração segura neste ambiente.',MEDIA_ACCESS_DENIED:'Acesso clínico não autorizado. Confira a sessão e as permissões.',FILE_SIZE:'Use um arquivo de até 4 MB.',FILE_TYPE:'Use JPEG, PNG, WebP ou PDF.',FILE_INVALID:'Arquivo inválido. Confira o formato e tente outro arquivo.',FILE_REJECTED:'O arquivo foi recusado pela verificação de segurança.',PDF_ACTIVE_CONTENT:'O PDF contém recursos ativos e não pode ser anexado.',PDF_UNSUPPORTED:'Use um PDF sem proteção e com até 100 páginas.',IMAGE_UNSUPPORTED:'Use uma fotografia estática compatível.',SCANNER_UNAVAILABLE:'Verificação de segurança indisponível. O arquivo não foi liberado.',MEDIA_INVALID:'Confira os dados do arquivo e a sessão clínica.',MEDIA_INTEGRITY:'Falha na conferência de integridade. O arquivo não foi entregue.'};
+   const safe={MEDIA_BUDGET_NOT_CONFIGURED:'O limite de armazenamento desta clínica ainda não foi configurado.',MEDIA_BUDGET_EXCEEDED:'O limite de arquivos, espaço ou envios pendentes foi atingido. Nenhuma cobrança ou ampliação automática será feita.',MEDIA_DISABLED:'Fotos e anexos aguardam configuração segura neste ambiente.',MEDIA_ACCESS_DENIED:'Acesso clínico não autorizado. Confira a sessão e as permissões.',FILE_SIZE:'Use um arquivo de até 4 MB.',FILE_TYPE:'Use JPEG, PNG, WebP ou PDF.',FILE_INVALID:'Arquivo inválido. Confira o formato e tente outro arquivo.',FILE_REJECTED:'O arquivo foi recusado pela verificação de segurança.',PDF_ACTIVE_CONTENT:'O PDF contém recursos ativos e não pode ser anexado.',PDF_UNSUPPORTED:'Use um PDF sem proteção e com até 100 páginas.',IMAGE_UNSUPPORTED:'Use uma fotografia estática compatível.',SCANNER_UNAVAILABLE:'Verificação de segurança indisponível. O arquivo não foi liberado.',MEDIA_INVALID:'Confira os dados do arquivo e a sessão clínica.',MEDIA_INTEGRITY:'Falha na conferência de integridade. O arquivo não foi entregue.'};
    throw Error(safe[error?.code]||'Não foi possível concluir. Preserve a seleção e tente novamente.');
   }
   return action==='export'?response.blob():response.json();
@@ -31,6 +31,12 @@ export function mountClinicalMedia({container,patient,entries,access,client,onBa
  const cleanup=()=>{alive=false;cleanups.forEach(fn=>fn());for(const url of urls)URL.revokeObjectURL(url);onDirty(false)};
  const back=button('Voltar ao prontuário',()=>{if(busy)return;if((pending||selected)&&!confirm('Descartar a seleção de arquivo ainda não concluída?'))return;cleanup();onBack()});
  controls.append(back);container.replaceChildren(el('h3','Fotografias e anexos'),controls,notice);
+ controls.append(button('Consultar armazenamento da clínica',async()=>{
+  try{const usage=await client.request('usage',patient);checkAlive();if(!usage.configured){notice.textContent='O limite de armazenamento ainda precisa ser definido pela administração. Nenhuma contratação é feita por esta tela.';return}
+   const mb=value=>(Number(value)/1000000).toLocaleString('pt-BR',{maximumFractionDigits:2});
+   notice.textContent=mb(usage.reservedBytes)+' MB usados ou reservados de '+mb(usage.limitBytes)+' MB definidos para esta clínica · '+usage.files+' arquivos · '+usage.pending+' envios pendentes. Originais e apresentações contam juntos. Este é o controle interno da clínica, não uma consulta de faturamento do provedor.';
+  }catch(error){fail(error)}
+ }));
  const privacy=el('p','Documentação clínica, tratamento de dados e divulgação têm finalidades distintas. Nenhuma imagem é publicada automaticamente. URLs de visualização expiram em 30 segundos; uma revogação impede novas emissões, sem invalidar instantaneamente um link já emitido.');privacy.className='clinical-help';container.append(privacy);
  if(access.can_write){
   const form=el('form');form.className='card clinical-media-upload';form.autocomplete='off';
@@ -70,7 +76,9 @@ export function mountClinicalMedia({container,patient,entries,access,client,onBa
   if(compare.length!==2)return fail(Error('Selecione exatamente duas fotografias.'));
   try{const pair=compare.map(id=>items.find(i=>i.id===id)),view=el('section');view.append(el('h3','Comparação clínica'));
    const images=await Promise.all(pair.map(imageFor));const side=el('div');side.className='clinical-photo-pair';images.forEach((img,i)=>{const figure=el('figure');figure.append(img,el('figcaption',img.alt));side.append(figure)});view.append(side);
-   const sliding=el('div');sliding.className='clinical-photo-slider';const layers=await Promise.all(pair.map(imageFor));sliding.append(...layers);layers[1].style.clipPath='inset(0 50% 0 0)';
+   // Reuse the two freshly authorized image resources for the overlay instead
+   // of requesting two extra signed URLs for the very same comparison.
+   const sliding=el('div');sliding.className='clinical-photo-slider';const layers=images.map(img=>img.cloneNode(true));sliding.append(...layers);layers[1].style.clipPath='inset(0 50% 0 0)';
    const range=el('input');range.type='range';range.min='0';range.max='100';range.value='50';range.setAttribute('aria-label','Posição do comparador');range.oninput=()=>layers[1].style.clipPath='inset(0 '+(100-Number(range.value))+'% 0 0)';
    view.append(el('p','Lado a lado e sobreposição. Datas, enquadramento e iluminação podem diferir; a comparação não mede resultado automaticamente.'),sliding,range);checkAlive();transientView(view);
   }catch(error){fail(error)}

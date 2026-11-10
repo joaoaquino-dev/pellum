@@ -8,7 +8,7 @@ const calls=[];const existing=Buffer.from('synthetic original');
 const fetcher=async(url,options)=>{
  calls.push({url,options});
  if(url.endsWith('/auth/v1/user'))return Response.json({id:mode==='wrong-user'?randomUUID():id});
- if(url.includes('/rest/v1/rpc/'))return Response.json({ok:true});
+ if(url.includes('/rest/v1/rpc/'))return mode==='budget'?Response.json({code:'54000',message:'MEDIA_BUDGET_EXCEEDED'},{status:400}):Response.json({ok:true});
  if(url.includes('/object/sign/'))return Response.json({signedURL:mode==='unsafe-url'?'https://wrong.example.invalid/secret':'/object/sign/private/object?token=synthetic'});
  if(options.method==='POST')return Response.json({message:'Already exists'},{status:409});
  if(mode==='oversize')return new Response(Buffer.alloc(4000001));
@@ -19,6 +19,7 @@ const ctx=await gateway.authenticate(token);eq(ctx.claims.sub,id);eq(calls[0].op
 mode='wrong-user';await assert.rejects(()=>gateway.authenticate(token),e=>e.code==='MEDIA_ACCESS_DENIED');checks++;mode='normal';
 await gateway.rpc(ctx,'list',randomUUID(),'p1');eq(calls.at(-1).options.headers.apikey,config.publicKey);
 await gateway.commit(ctx,randomUUID(),{});eq(calls.at(-1).options.headers.apikey,config.serverKey);eq(calls.at(-1).options.headers.Authorization,'Bearer '+config.serverKey);
+mode='budget';await assert.rejects(()=>gateway.rpc(ctx,'reserve',randomUUID(),'p1'),e=>e.code==='MEDIA_BUDGET_EXCEEDED'&&e.status===409);checks++;mode='normal';
 eq((await gateway.signedUrl('private','object')).startsWith(config.url+'/storage/v1/object/sign/'),true);eq(JSON.parse(calls.at(-1).options.body).expiresIn,30);
 mode='unsafe-url';await assert.rejects(()=>gateway.signedUrl('private','object'));checks++;mode='normal';
 await gateway.putOnce('private','object',existing,'image/jpeg');checks++;

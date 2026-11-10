@@ -7,6 +7,7 @@ export function createSupabaseGateway(config,{fetcher=fetch}={}){
   catch{throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503)}
   if(!response.ok){let error;try{error=await response.json()}catch{}
    if(error?.message==='CLINICAL_MFA_REQUIRED')throw mediaError('CLINICAL_MFA_REQUIRED',403);
+   if(['MEDIA_BUDGET_NOT_CONFIGURED','MEDIA_BUDGET_EXCEEDED'].includes(error?.message))throw mediaError(error.message,409);
    if(response.status===401||response.status===403||error?.code==='42501')throw mediaError('MEDIA_ACCESS_DENIED',403);
    if(error?.code==='22023'||error?.code==='23514'||error?.code==='22P02')throw mediaError('MEDIA_INVALID',422);
    throw mediaError('MEDIA_SERVICE_UNAVAILABLE',503);
@@ -28,7 +29,7 @@ export function createSupabaseGateway(config,{fetcher=fetch}={}){
    if(!user?.id||claims.sub!==user.id||!claims.session_id||claims.exp*1000<=Date.now())throw mediaError('MEDIA_ACCESS_DENIED',403);
    return {token,claims};
   },
-  rpc(ctx,action,clinic,patient,body={}){return request('/rest/v1/rpc/aura_clinical_media_rpc',{token:ctx.token,method:'POST',body:{p_action:action,p_clinic:clinic,p_patient:patient,p_body:body}})},
+  rpc(ctx,action,clinic,patient,body={}){return action==='usage'?request('/rest/v1/rpc/aura_clinical_media_usage',{token:ctx.token,method:'POST',body:{p_clinic:clinic}}):request('/rest/v1/rpc/aura_clinical_media_rpc',{token:ctx.token,method:'POST',body:{p_action:action,p_clinic:clinic,p_patient:patient,p_body:body}})},
   commit(ctx,id,evidence){return request('/rest/v1/rpc/aura_clinical_media_commit',{method:'POST',body:{p_id:id,p_claims:ctx.claims,p_body:evidence}})},
   async putOnce(bucket,path,bytes,mime){
    // A retry never overwrites an original. If it already exists, compare bytes

@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 import {createClinicalTestDatabase} from './clinical-database.mjs';
-export async function createMediaTestDatabase(){
+export async function createMediaTestDatabase({withLimits=false}={}){
  const env=await createClinicalTestDatabase();const {db,login,ids,rpc}=env;
  await db.exec('reset role');
  await db.exec(`create role service_role bypassrls; create schema storage;
@@ -15,6 +15,10 @@ export async function createMediaTestDatabase(){
  grant select,insert,update,delete on storage.objects to anon,authenticated;
  create policy deliberately_broad_existing_policy on storage.objects for all to anon,authenticated using(true) with check(true);`);
  await db.exec(await readFile('supabase/migrations/20261109220831_clinical_media.sql','utf8'));
+ if(withLimits){
+  await db.exec(await readFile('supabase/migrations/20261110003930_clinical_media_limits.sql','utf8'));
+  await db.query('select aura_private.configure_clinical_media_limits($1,$2,$3,$4)',[ids.clinic,50000000,100,100]);
+ }
  await login();await rpc('grant',{userId:ids.owner,professionalId:0,profession:'enfermagem',registry:'QA',write:true,export:true,enabled:true,requestId:randomUUID()});
  const mediaRpc=async(action,body={},patient='p1',clinic=ids.clinic)=>(await db.query('select public.aura_clinical_media_rpc($1,$2,$3,$4) as result',[action,clinic,patient,JSON.stringify(body)])).rows[0].result;
  const workerCommit=async(id,evidence,{name='owner',aal='aal1'}={})=>{

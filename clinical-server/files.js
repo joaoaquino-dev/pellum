@@ -31,7 +31,7 @@ export async function processClinicalFile(bytes,{name,mime,scan}){
    const image=sharp(bytes,{failOn:'warning',limitInputPixels:24_000_000,limitInputChannels:4});
    const metadata=await image.metadata();
    if(metadata.format!==type.format||(metadata.pages||1)>1)throw mediaError('IMAGE_UNSUPPORTED');
-   const converted=await image.rotate().resize({width:2048,height:2048,fit:'inside',withoutEnlargement:true}).jpeg({quality:95,chromaSubsampling:'4:4:4'}).timeout({seconds:10}).toBuffer({resolveWithObject:true});
+   const converted=await image.rotate().resize({width:2048,height:2048,fit:'inside',withoutEnlargement:true}).jpeg({quality:90,mozjpeg:true,chromaSubsampling:'4:4:4'}).timeout({seconds:10}).toBuffer({resolveWithObject:true});
    display=converted.data;width=converted.info.width;height=converted.info.height;
    if(display.length>MAX_FILE_BYTES)throw mediaError('FILE_SIZE');
   }
