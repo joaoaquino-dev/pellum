@@ -7,6 +7,8 @@ assert.equal(resolveBuildConfig({},production).url,'http://127.0.0.1:54321');
 assert.throws(()=>resolveBuildConfig({VERCEL_ENV:'preview',PELLUM_ENV:'development'},production));
 assert.equal(resolveBuildConfig(staging,production).mode,'staging');
 assert.equal(resolveBuildConfig({PELLUM_ENV:'production'},production).url,production.url);
+assert.equal(resolveBuildConfig({PELLUM_PUBLIC_ORIGIN:'https://pellum-qa.netlify.app/'},production).publicOrigin,'https://pellum-qa.netlify.app');
+for(const origin of ['http://example.com','https://example.com/path','https://user:fake@example.com','https://example.com/?code=qa','https://example.com/#qa','https://foo&bar.example'])assert.throws(()=>resolveBuildConfig({PELLUM_PUBLIC_ORIGIN:origin},production));
 assert.equal(resolveBuildConfig({VERCEL_ENV:'production',VERCEL_PROJECT_ID:'prj_xNNqxkDzMtJScbuTbt1Fhp5bjdRA'},production).mode,'production');
 for(const env of [{VERCEL_ENV:'preview'}, {...staging,PELLUM_SUPABASE_URL:production.url},{...staging,PELLUM_STAGING_PROJECT_REF:'wrong'},{...staging,PELLUM_SUPABASE_PUBLISHABLE_KEY:'sb_secret_forbidden'},{...staging,PELLUM_SUPABASE_URL:'https://bbbbbbbbbbbbbbbbbbbb.supabase.co/path'},{VERCEL_ENV:'preview',PELLUM_ENV:'production'},{VERCEL_ENV:'production',VERCEL_PROJECT_ID:'another-project'},{PELLUM_ENV:'production',PELLUM_SUPABASE_URL:staging.PELLUM_SUPABASE_URL}])assert.throws(()=>resolveBuildConfig(env,production));
 const legacySecret='eyJ.'+Buffer.from(JSON.stringify({role:'service_role'})).toString('base64url')+'.test';

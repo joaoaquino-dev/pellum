@@ -24,7 +24,7 @@ window.AURA_CONNECT=function(options){
  });
  window.addEventListener('beforeunload',e=>{if(dirty||busy||activeWriter?.state.pending){e.preventDefault();e.returnValue=''}});
  function shell(){
-  dialog.innerHTML=`<div class="clinical-header"><div><span class="eyebrow">PRONTUÁRIO · HOMOLOGAÇÃO</span><h2 id="clinicalTitle">${esc(patient(patientId))}</h2></div><button type="button" id="clinicalClose" class="secondary" aria-label="Fechar prontuário">Fechar</button></div><p id="clinicalMessage" role="status" aria-live="polite"></p><div id="clinicalBody"></div>`;
+  dialog.innerHTML=`<div class="clinical-header"><div><span class="eyebrow">PRONTUÁRIO${service.deploymentEnvironment==='production'?'':' · HOMOLOGAÇÃO'}</span><h2 id="clinicalTitle">${esc(patient(patientId))}</h2></div><button type="button" id="clinicalClose" class="secondary" aria-label="Fechar prontuário">Fechar</button></div><p id="clinicalMessage" role="status" aria-live="polite"></p><div id="clinicalBody"></div>`;
   find('#clinicalClose').onclick=safeClose;
  }
  async function open(id){

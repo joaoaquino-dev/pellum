@@ -1,4 +1,5 @@
 // This module runs only during build. Do not print configuration or keys in errors.
+import {resolvePublicOrigin} from './public-origin.js';
 export function resolveBuildConfig(env,production){
  const mode=env.PELLUM_ENV||(env.VERCEL_ENV==='production'?'production':env.VERCEL_ENV==='preview'?'staging':'development');
  if(!['development','staging','production'].includes(mode))throw Error('Ambiente de build inválido.');
@@ -19,5 +20,5 @@ export function resolveBuildConfig(env,production){
  let legacyRole=null;
  if(publishableKey.startsWith('eyJ'))try{legacyRole=JSON.parse(Buffer.from(publishableKey.split('.')[1],'base64url').toString()).role}catch{}
  if(!/^sb_publishable_[A-Za-z0-9_-]+$/.test(publishableKey)&&legacyRole!=='anon')throw Error('Use somente chave publicável de cliente. Chaves administrativas são proibidas.');
- return {mode,url:parsed.origin,publishableKey};
+ return {mode,url:parsed.origin,publishableKey,publicOrigin:resolvePublicOrigin(env.PELLUM_PUBLIC_ORIGIN)};
 }

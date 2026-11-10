@@ -14,7 +14,7 @@ try{
  const old=await save('Ácido hialurônico antigo <script>window.SEARCH_LEAK=true</script>',{occurredAt:'2020-01-01T12:00:00Z'});
  for(let i=0;i<101;i++)await save('Registro recente fictício '+i);
  const stub=`export function createClient(){return {auth:{getSession:async()=>({data:{session:{user:{id:${JSON.stringify(accounts.owner.user)},email:${JSON.stringify(accounts.owner.email)}}}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},rpc:async(name,args)=>{const response=await fetch('/__stock-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,args})});return response.json()}}}`;
- const compiled=(await build({entryPoints:['standalone/src/main.js'],bundle:true,write:false,format:'iife',platform:'browser',define:{AURA_DEPLOY_ENV:'"staging"',AURA_SUPABASE_URL:'"https://qa.example.invalid"',AURA_SUPABASE_KEY:'"sb_publishable_fictitious"'},plugins:[{name:'explicit-auth-double',setup(b){b.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'stub',namespace:'qa'}));b.onLoad({filter:/.*/,namespace:'qa'},()=>({contents:stub,loader:'js'}))}}]})).outputFiles[0].text;
+ const compiled=(await build({entryPoints:['standalone/src/main.js'],bundle:true,write:false,format:'iife',platform:'browser',define:{AURA_DEPLOY_ENV:'"production"',AURA_SUPABASE_URL:'"https://qa.example.invalid"',AURA_SUPABASE_KEY:'"sb_publishable_fictitious"'},plugins:[{name:'explicit-auth-double',setup(b){b.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'stub',namespace:'qa'}));b.onLoad({filter:/.*/,namespace:'qa'},()=>({contents:stub,loader:'js'}))}}]})).outputFiles[0].text;
  server=createServer(async(req,res)=>{try{
   if(req.url==='/__stock-rpc'){
    let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1000000)throw Error('Body limit')}
@@ -38,6 +38,7 @@ try{
 
  eq(await dialog.locator('.clinical-entry').filter({hasText:'Ácido hialurônico antigo'}).count(),0);
  await dialog.locator('#clinicalSearch').fill('acido HIALURONICO');await dialog.getByRole('button',{name:'Pesquisar',exact:true}).click();
+ eq(await dialog.locator('.eyebrow').innerText(),'PRONTUÁRIO');
  const form=dialog.locator('#clinicalHistorySearch'),results=dialog.locator('.clinical-search-results');await results.getByText('Ácido hialurônico antigo',{exact:false}).waitFor();eq(await results.locator('article').count(),1);eq(await page.evaluate(()=>window.SEARCH_LEAK),undefined);
  await results.getByRole('button',{name:'Abrir registro',exact:true}).click();await dialog.getByRole('button',{name:'Adicionar adendo',exact:true}).waitFor();eq(await dialog.locator('.clinical-entry').count(),1);
  await dialog.getByRole('button',{name:'Voltar à pesquisa',exact:true}).click();eq(await form.locator('[name="query"]').inputValue(),'acido HIALURONICO');

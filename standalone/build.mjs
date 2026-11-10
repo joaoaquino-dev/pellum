@@ -22,10 +22,13 @@ await writeFile('dist/_headers',"/*\n  X-Content-Type-Options: nosniff\n  Referr
 console.log('Pellum independente gerada em standalone/dist · '+config.mode);
 
 await mkdir('dist/conheca',{recursive:true});
-for(const f of ['index.html','landing.css','landing.js'])await copyFile('landing/'+f,'dist/conheca/'+f);
+for(const f of ['index.html','landing.css','landing.js']){
+ if(f==='index.html')await writeFile('dist/conheca/'+f,(await readFile('landing/'+f,'utf8')).replaceAll('https://usepellum.vercel.app',config.publicOrigin));
+ else await copyFile('landing/'+f,'dist/conheca/'+f);
+}
 
 // Public discovery only: the authenticated application never enters the sitemap.
-await writeFile('dist/robots.txt','User-agent: *\nAllow: /\nSitemap: https://usepellum.vercel.app/sitemap.xml\n');
-await writeFile('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://usepellum.vercel.app/conheca/</loc></url></urlset>');
+await writeFile('dist/robots.txt','User-agent: *\nAllow: /\nSitemap: '+config.publicOrigin+'/sitemap.xml\n');
+await writeFile('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>'+config.publicOrigin+'/conheca/</loc></url></urlset>');
 await copyFile('landing/404.html','dist/404.html');
 await copyFile('assets/social-card.png','dist/social-card.png');

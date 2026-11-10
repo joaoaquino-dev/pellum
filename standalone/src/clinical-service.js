@@ -4,8 +4,8 @@ import {createClinicalMediaClient,mountClinicalMedia} from './clinical-media.js'
 import {mountClinicalQuestionnaire} from './clinical-questionnaire.js';
 import {mountClinicalFollowups} from './clinical-followups.js';
 import {mountClinicalSearch} from './clinical-search.js';
-export function createClinicalService(sb,getClinic,verifyMFA,{mediaEnabled=false}={}){
- return {model,renderClinicalExport,mediaEnabled,mountClinicalQuestionnaire,mountClinicalFollowups,mountClinicalSearch,mediaClient:createClinicalMediaClient(sb,getClinic,verifyMFA),mountClinicalMedia,actorId:null,
+export function createClinicalService(sb,getClinic,verifyMFA,{mediaEnabled=false,deploymentEnvironment='development'}={}){
+ return {model,renderClinicalExport,mediaEnabled,deploymentEnvironment,mountClinicalQuestionnaire,mountClinicalFollowups,mountClinicalSearch,mediaClient:createClinicalMediaClient(sb,getClinic,verifyMFA),mountClinicalMedia,actorId:null,
   async searchCall(patient,body={}){
    let response;try{response=await sb.rpc('aura_clinical_search',{p_clinic:getClinic(),p_patient:patient,p_body:body})}catch{throw Error('Não foi possível pesquisar agora. Confira a conexão e tente novamente.')}
    if(response.error)throw Object.assign(Error(model.clinicalError(response.error)),{code:response.error.code});return response.data;

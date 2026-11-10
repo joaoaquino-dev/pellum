@@ -26,7 +26,7 @@ const rememberClinic=id=>{if(!clinicKey)return; if(id)localStorage.setItem(clini
 window.AURA_REMEMBER_CLINIC=rememberClinic;
 function bindClinicSwitch(){const input=$('#clinicSwitch');if(!input)return;input.onchange=e=>{const sync=window.AURA_CLINIC_SYNC?.();if(sync&&(sync.pending||sync.blocked)){e.target.value=clinicId;window.AURA_ACTION_ERROR?.(sync.blocked?'Existem alterações não salvas. Resolva a sincronização antes de trocar de clínica.':'Aguarde o salvamento antes de trocar de clínica.');return}rememberClinic(e.target.value);location.reload()}}
 const security=setupSecurityUI(sb,{escape,onAccountChange:()=>location.reload()});
-window.AURA_CLINICAL=createClinicalService(sb,()=>clinicId,()=>security.verifyMFA());
+window.AURA_CLINICAL=createClinicalService(sb,()=>clinicId,()=>security.verifyMFA(),{deploymentEnvironment:AURA_DEPLOY_ENV});
 async function api(body,retry=true){
  if(body&&['create','save','member','restore','export','delete_clinic'].includes(body.action)&&!body.requestId)body={...body,requestId:newUuid()};
  const {data,error}=await sb.rpc('aura_rpc',{p_action:body?.action||'get',p_clinic:clinicId,p_body:body||{}});
