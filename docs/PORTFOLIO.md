@@ -2,7 +2,7 @@
 
 **Gestão de clínicas de estética · produto em evolução · referência de 09/11/2026**
 
-[Conhecer o produto](https://usepellum.vercel.app/conheca/) · [Examinar a versão independente](https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0)
+[Conhecer o produto](https://usepellum.vercel.app/conheca/) · [Examinar a versão independente](https://github.com/joaoaquino-dev/pellum/tree/main)
 
 ## O problema
 
@@ -37,26 +37,30 @@ A interface e a persistência precisam concordar: esconder o item da lista ativa
 
 Conhecer um identificador de clínica não deve conceder acesso. A versão independente usa identidade de sessão, autorização de uso e vínculo com a clínica, com RLS nas tabelas privadas de negócio e operações de escrita encapsuladas em RPCs.
 
-A [auditoria](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/AUDIT-PRODUCTION-2026-11-04.md) documenta testes transacionais com fixtures e rollback, além de limitações ainda abertas. Não se trata de uma certificação de segurança.
+A [auditoria](https://github.com/joaoaquino-dev/pellum/blob/main/docs/AUDIT-PRODUCTION-2026-11-04.md) documenta testes transacionais com fixtures e rollback, além de limitações ainda abertas. Não se trata de uma certificação de segurança.
 
 ## Exemplo: experiência no celular
 
 A interface prioriza uso com toque e leitura em telas pequenas. A revisão documentada tratou organização de tabelas, espaçamento de ações, foco e feedback em modais, preservando a marca.
 
-O [relatório de UI](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/UI-UX-2026-11-05.md) registra verificações em múltiplas larguras com dados fictícios e APIs simuladas. Isso não comprova comportamento em todos os dispositivos ou uma sessão autenticada real.
+O [relatório de UI](https://github.com/joaoaquino-dev/pellum/blob/main/docs/UI-UX-2026-11-05.md) registra verificações em múltiplas larguras com dados fictícios e APIs simuladas. Isso não comprova comportamento em todos os dispositivos ou uma sessão autenticada real.
 
 ## Evidências que podem ser examinadas
 
-- [Código de entrada e autenticação](https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0/standalone/src).
-- [Histórico de migrations](https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0/supabase/migrations).
-- [Testes existentes](https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0/tests).
-- [Revisão de produção e limites](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/AUDIT-PRODUCTION-2026-11-04.md).
-- [Contexto de arquitetura e regras](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/PROJECT_CONTEXT.md).
+- [Código de entrada e autenticação](https://github.com/joaoaquino-dev/pellum/tree/main/standalone/src).
+- [Histórico de migrations](https://github.com/joaoaquino-dev/pellum/tree/main/supabase/migrations).
+- [Testes existentes](https://github.com/joaoaquino-dev/pellum/tree/main/tests).
+- [Revisão de produção e limites](https://github.com/joaoaquino-dev/pellum/blob/main/docs/AUDIT-PRODUCTION-2026-11-04.md).
+- [Contexto de arquitetura e regras](https://github.com/joaoaquino-dev/pellum/blob/main/standalone/README.md).
 
-Os links apontam a commits fixos. Resultados anteriores não devem ser apresentados como testes reexecutados hoje.
+Os links apontam à main. Relatórios históricos conservam suas datas e limitações. A verificação atual está em PUBLICATION_REVIEW.md.
 
 ## Próximas etapas técnicas
 
-Concluir homologação dos fluxos reais de acesso e e-mail, comprovar recuperação externa, esclarecer os papéis de acesso e avaliar evolução da persistência com base no uso. A consolidação das branches também precisa ser planejada para que a branch padrão represente a versão de desenvolvimento correta.
+Concluir homologação dos fluxos reais de acesso e e-mail, comprovar recuperação externa, esclarecer os papéis de acesso e avaliar evolução da persistência com base no uso. A main foi preparada com a versão independente, preservando as linhas de histórico.
 
 O repositório mostra um produto em evolução, com decisões, evidências e limitações explícitas. Não há métricas comerciais, número de clientes ou ganhos de produtividade comprovados nesta documentação.
+
+## Minha participação e uso de IA
+
+João Aquino participou do levantamento de requisitos e feedbacks, das decisões de produto, do acompanhamento e revisão das alterações e da definição de verificações. Ferramentas de IA apoiaram implementação, testes, revisão e documentação. Esta apresentação não atribui autoria manual integral nem competência não comprovada.

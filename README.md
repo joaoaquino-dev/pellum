@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://usepellum.vercel.app/conheca/"><strong>Conheça o produto</strong></a>
-  · <a href="https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0/standalone">Código da versão independente</a>
+  · <a href="https://github.com/joaoaquino-dev/pellum/tree/main/standalone">Código da versão independente</a>
   · <a href="docs/PORTFOLIO.md">Estudo de caso</a>
   · <a href="https://www.instagram.com/usepellum/">Instagram</a>
 </p>
@@ -48,17 +48,9 @@ WhatsApp abre uma conversa ou rascunho; o envio é feito pela pessoa. Parcelas s
 
 Leia o [estudo de caso](docs/PORTFOLIO.md) para entender decisões, limites e exemplos do trabalho técnico.
 
-## Onde está o código atual?
+## Código e estrutura
 
-> **A árvore de código da main ainda é o piloto histórico Aura/ChatGPT/D1.** A apresentação desta página descreve a versão independente, disponível no link abaixo. Os códigos não foram consolidados nesta atualização documental.
-
-| Referência | Conteúdo |
-| --- | --- |
-| [Versão independente `9d911fc`](https://github.com/joaoaquino-dev/pellum/tree/9d911fc86e0b7c3df109ce41274512c64997afe0) | Frontend estático, Supabase e configuração Vercel, conforme referência documentada |
-| [Handoff `901646a`](https://github.com/joaoaquino-dev/pellum/tree/901646a153d94ec2770148ef7238f41f06dba726) | Mesma base com contexto técnico e orientação de continuidade |
-| `main` | Código do piloto original e apresentação de portfólio |
-
-Referências verificadas em **09/11/2026**. Os links usam commits fixos; não representam uma consulta permanente ao estado de produção. Desenvolvimento local posterior não é comprovado por estes commits.
+A `main` contém a aplicação independente Supabase + Vercel. O piloto Aura/ChatGPT/D1 permanece no histórico; parte de sua infraestrutura ainda está na árvore por compatibilidade, mas não entra no build publicado. Veja [o mapa do repositório](docs/REPOSITORY_GUIDE.md) e [as notas do legado](docs/LEGACY.md).
 
 ## Arquitetura
 
@@ -75,7 +67,7 @@ React/Next, D1 e Drizzle na raiz pertencem ao legado. Os nomes internos `aura_*`
 
 ## Executar e verificar
 
-Primeiro, abra a [versão independente](https://github.com/joaoaquino-dev/pellum/tree/901646a153d94ec2770148ef7238f41f06dba726) e leia seu `AGENTS.md`. Os comandos abaixo **não se aplicam ao código legado desta main**.
+Clone este repositório e use a main. Os comandos abaixo instalam apenas a aplicação independente, sem as dependências do piloto histórico.
 
 Com Node.js 24 e npm:
 
@@ -85,15 +77,21 @@ npm --prefix standalone run build
 npm --prefix standalone run check
 node --check public/aura/app.js
 node --check public/aura/features.js
+npm --prefix standalone test
 ```
 
-Instalação, testes JavaScript e orientações para prévia local: [guia de ambiente](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/ENVIRONMENT_SETUP.md). O comando `check` verifica sintaxe da entrada, não o fluxo completo.
+O build gera `standalone/dist`. Para servir uma prévia local com Python 3, execute `python -m http.server 4173 --directory standalone/dist --bind 127.0.0.1` e abra `http://127.0.0.1:4173/conheca/`. Build e testes foram executados em Linux com Node 24; a abertura do servidor e os fluxos autenticados não foram homologados nesta sessão. Não altere a lista de redirects do Supabase para fazer uma prévia funcionar.
+
+O comando `test` executa os 11 scripts JavaScript e a verificação do alvo estático; rode o build antes dele. Não é teste de entrega de e-mail ou gravação remota.
 
 Não execute migrations ou testes SQL automaticamente contra produção. Use dados fictícios em ambiente controlado.
 
 ## Evidências e limites
 
-A [auditoria de 04/11](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/AUDIT-PRODUCTION-2026-11-04.md) registra 40 asserções SQL, 11 scripts JavaScript e as limitações daquela execução. O [relatório de interface](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/UI-UX-2026-11-05.md) distingue testes responsivos com dados fictícios e APIs simuladas de validação remota real.
+**Verificação desta preparação:** instalação standalone, build, 11 testes JavaScript, check de sintaxe e verificação de artefatos aprovados em Node 24/Linux. Consulte o [relatório final](docs/PUBLICATION_REVIEW.md). Capturas de tela novas não foram geradas: o navegador automatizado não iniciou neste ambiente. Não foram usados dados de pacientes para produzir imagens.
+
+
+A [auditoria de 04/11](https://github.com/joaoaquino-dev/pellum/blob/main/docs/AUDIT-PRODUCTION-2026-11-04.md) registra 40 asserções SQL, 11 scripts JavaScript e as limitações daquela execução. O [relatório de interface](https://github.com/joaoaquino-dev/pellum/blob/main/docs/UI-UX-2026-11-05.md) distingue testes responsivos com dados fictícios e APIs simuladas de validação remota real.
 
 Esses resultados são históricos. Não significam cobertura total, CI atual aprovado ou garantia de segurança. Entrega de e-mail, autenticação real, recuperação externa e homologação precisam ser verificadas no contexto de cada publicação.
 
@@ -103,13 +101,13 @@ Prontuários, imagens clínicas e assinaturas desenvolvidos fora dessas referên
 
 - [Estudo de caso para portfólio](docs/PORTFOLIO.md)
 - [Mapa do repositório](docs/REPOSITORY_GUIDE.md)
-- [Contexto técnico completo](https://github.com/joaoaquino-dev/pellum/blob/901646a153d94ec2770148ef7238f41f06dba726/docs/PROJECT_CONTEXT.md)
+- [Contexto técnico completo](https://github.com/joaoaquino-dev/pellum/blob/main/standalone/README.md)
 - [Guia de contribuição](CONTRIBUTING.md) e [segurança](SECURITY.md)
 - [Revisão para publicação](docs/PUBLICATION_REVIEW.md)
 - [README histórico do piloto](docs/history/README-AURA.md)
 
 ## Autoria e uso
 
-Projeto de **[João Aquino](https://github.com/joaoaquino-dev)**, desenvolvido a partir de uma necessidade real na área de estética.
+Projeto de **[João Aquino](https://github.com/joaoaquino-dev)**. Minha atuação inclui levantamento de requisitos com usuárias, decisões de produto, acompanhamento da implementação, revisão e solicitação de testes e correções. **Usei IA como apoio no desenvolvimento, na revisão e na documentação.** O código e os relatórios permitem examinar o resultado; não afirmo autoria manual de cada linha.
 
-A publicação do código permite conhecer o trabalho técnico, mas não disponibiliza dados de clínicas, acesso administrativo ou credenciais. Nenhuma licença de código aberto foi adicionada nesta atualização; avisos de terceiros permanecem nos respectivos arquivos.
+Código disponibilizado para avaliação de portfólio sob [todos os direitos reservados](LICENSE). Não é uma licença open source. Licenças de componentes de terceiros permanecem válidas em seus arquivos.
