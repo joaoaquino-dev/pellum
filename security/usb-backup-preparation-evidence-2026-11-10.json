@@ -1,0 +1,11 @@
+{
+  "preparedAt": "2026-11-10T17:33:44.267Z",
+  "drive": "D:",
+  "archiveBytes": 517195,
+  "archiveSha256": "7be5b66694858e737c13ee65c7914b74ac5d36a5606145c00a2115a11764778c",
+  "copiedFiles": 12,
+  "copiesHashVerified": true,
+  "portableKeyCreated": false,
+  "state": "awaiting-private-passphrase",
+  "scope": "Encrypted real backup and public Windows recovery tools copied to a new USB directory. No raw key, plaintext SQL, deletion, format or production changes."
+}

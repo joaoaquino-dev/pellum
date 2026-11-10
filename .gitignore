@@ -35,6 +35,7 @@ yarn-error.log*
 *.pellum
 *.dump
 *.dpapi
+portable-key.json
 *.incomplete
 /backups/
 
