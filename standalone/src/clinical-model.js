@@ -52,6 +52,41 @@ export const defaultQuestions = conditions.flatMap(([id,label])=>[
  {id,label,type:'tri',required:false},
  {id:id+'_detail',label:'Detalhes: '+label.toLowerCase(),type:'text',when:{field:id,equals:'yes'}}
 ]);
+// Built-in questionnaires are copied into each record; previous versions keep
+// their captured questions and answers, independently of these starting points.
+const questionWithDetails=(id,label)=>[
+ {id,label,type:'tri',required:false},
+ {id:id+'_detail',label:'Se sim, conte mais',type:'text',when:{field:id,equals:'yes'}}
+];
+export const anamnesisPresets=[
+ {id:'general',name:'Anamnese geral · pronta para preencher',questions:defaultQuestions},
+ {id:'facial',name:'Cuidados faciais e pele',questions:[...defaultQuestions,
+  ...questionWithDetails('isotretinoin','Usa ou já usou isotretinoína? Informe quando.'),
+  ...questionWithDetails('hormonal','Relata alterações hormonais?'),
+  {id:'skinType',label:'Como a paciente percebe a própria pele?',type:'single',options:['Seca','Oleosa','Mista','Normal','Não sabe informar']},
+  ...questionWithDetails('acne','Relata acne ativa?'),
+  ...questionWithDetails('pigmentation','Relata manchas na pele?'),
+  ...questionWithDetails('rosacea','Relata rosácea?'),
+  ...questionWithDetails('acids','Usa ácidos ou está em tratamento dermatológico?'),
+  ...questionWithDetails('sunProtection','Usa protetor solar diariamente?'),
+  {id:'skinRoutine',label:'Rotina de cuidados e produtos usados atualmente',type:'text'},
+  {id:'waterIntake',label:'Como descreve a ingestão de água?',type:'text'}
+ ]},
+ {id:'botulinum',name:'Histórico para avaliação de toxina botulínica',questions:[...defaultQuestions,
+  ...questionWithDetails('previousToxin','Já realizou aplicação de toxina botulínica?'),
+  {id:'toxinDate',label:'Quando foi a última aplicação?',type:'text',when:{field:'previousToxin',equals:'yes'}},
+  {id:'toxinRegion',label:'Regiões e marca anterior, se souber',type:'text',when:{field:'previousToxin',equals:'yes'}},
+  {id:'toxinResult',label:'Resultado, duração percebida e reações anteriores',type:'text',when:{field:'previousToxin',equals:'yes'}},
+  {id:'upcomingEvent',label:'Eventos próximos e datas relevantes relatados',type:'text'},
+  ...questionWithDetails('neuromuscular','Relata condição neuromuscular?'),
+  ...questionWithDetails('bruxism','Range ou aperta os dentes?'),
+  ...questionWithDetails('headache','Relata dores de cabeça frequentes ou dor na articulação da mandíbula?'),
+  ...questionWithDetails('eyelids','Relata dificuldade para abrir os olhos ou peso na testa?'),
+  {id:'facialHistory',label:'Alterações faciais e procedimentos anteriores relatados',type:'text'},
+  {id:'dailyHabits',label:'Atividade física, exposição solar, tabaco e álcool, se pertinentes',type:'text'},
+  {id:'desiredResult',label:'Preferências e expectativas de resultado relatadas',type:'text'}
+ ]}
+];
 export const nursingSteps=['Avaliação de Enfermagem','Diagnóstico de Enfermagem','Planejamento de Enfermagem','Implementação de Enfermagem','Evolução de Enfermagem'];
 export const triLabels={yes:'Sim',no:'Não',unknown:'Não sei'};
 export function validateQuestions(questions){

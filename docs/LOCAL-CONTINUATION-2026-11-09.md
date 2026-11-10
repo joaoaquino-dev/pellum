@@ -1,5 +1,7 @@
 # Continuidade local — otimização e operação sem novas contratações
 
+Atualização em 10/11/2026: a mudança para Netlify foi concluída e o proprietário confirmou o acesso aos dados existentes. Consulte [HOSTING-MOVE-2026-11-10.md](HOSTING-MOVE-2026-11-10.md), seção “Publicação concluída”, para o estado efetivo, e [SIMPLICIDADE-2026-11-10.md](SIMPLICIDADE-2026-11-10.md) para as melhorias de uso posteriores. As descrições abaixo preservam o histórico anterior.
+
 Registro de 09/11/2026, America/Sao_Paulo. Este documento complementa a Fase 2 e aplica as decisões mais recentes em OWNER-DECISIONS-2026-11-09.md: orçamento de R$0 para novas contratações, recebimento externo por Pix/cartão e controle manual de acesso no administrador. Nenhum deploy ou migration de produção foi executado.
 
 ## Otimização de fotografias

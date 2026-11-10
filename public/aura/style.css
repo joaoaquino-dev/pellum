@@ -120,4 +120,9 @@ body:has(dialog[open]){overflow:hidden}
   .auth-card .brand{margin-bottom:26px}
   .auth-card .toolbar{gap:8px;margin:18px 0}
 }
+.pricing-layout{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start}
+.pricing-layout>*,.pricing-layout form>*{min-width:0}
+.pricing-layout summary,#sharedManagement summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--green);font-weight:600}
+.pricing-layout summary:focus-visible,#sharedManagement summary:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.pricing-layout details[open]>summary{margin-bottom:12px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

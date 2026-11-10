@@ -45,7 +45,7 @@ window.AURA_CONNECT=function(options){
  function toolbar(){
   const bar=document.createElement('div');bar.className='toolbar clinical-toolbar';
   if(access?.can_write)for(const kind of Object.keys(model.clinicalKinds))bar.append(button('＋ '+model.clinicalKinds[kind],()=>edit(kind),false));
-  if(access?.can_write)bar.append(button('Modelos de anamnese',()=>templateEditor()));
+  if(access?.can_write){const custom=document.createElement('details');custom.className='clinical-optional';const title=document.createElement('summary');title.textContent='Personalizar perguntas (opcional)';custom.append(title,button('Modelos de anamnese',()=>templateEditor()));bar.append(custom)}
   if(access?.can_write){const models=document.createElement('details');models.className='clinical-optional';const title=document.createElement('summary');title.textContent='Modelos de procedimentos e termos';models.append(title,button('Modelos de procedimentos',()=>templateEditor(null,'procedure')),button('Modelos de termos',()=>templateEditor(null,'consent')));bar.append(models)}
   if(service.mediaEnabled)bar.append(button('Fotografias e anexos',()=>{clearTimeout(timer);epoch++;mediaView=service.mountClinicalMedia({container:find('#clinicalBody'),patient:patientId,entries,access,client:service.mediaClient,onBack:()=>{mediaView=null;reload()},onDirty:value=>dirty=value});info('Fotografias e documentos clínicos com acesso restrito.')}));
   bar.append(button('Gerenciar acesso clínico',manageAccess));
@@ -218,8 +218,9 @@ window.AURA_CONNECT=function(options){
    form.insertAdjacentHTML('beforeend',`<label class="field">Atendimento com consumo já registrado<select name="financialRecordId" ${entry?.finalized?'disabled':''}><option value="">Sem vínculo de estoque</option>${state.records.filter(r=>r.patient===patientId).map(r=>`<option value="${esc(r.id)}" ${r.id===payload.financialRecordId?'selected':''}>${esc(r.date)} · ${esc(r.procedure)}</option>`).join('')}</select></label><p>O vínculo preserva os materiais do atendimento. O consumo é registrado uma única vez no fluxo de atendimento existente.</p>`);
   }
   if(kind==='anamnesis'){
+   const help=document.createElement('p');help.className='hint';help.textContent='As perguntas já estão prontas: basta preencher as respostas com a paciente. Escolha uma ficha abaixo, se quiser. Criar perguntas é opcional. A ficha organiza o relato e não determina se um procedimento está indicado.';form.append(help);
    const templateSelect=document.createElement('label');templateSelect.className='field';templateSelect.textContent='Modelo de perguntas';
-   const select=document.createElement('select');select.name='templateChoice';select.innerHTML='<option value="">Perguntas de referência · adaptar à relevância clínica</option>'+templates.map((t,i)=>`<option value="${i}">${esc(t.name)} · v${t.version}</option>`).join('');
+   const select=document.createElement('select');select.name='templateChoice';select.innerHTML=model.anamnesisPresets.map((p,i)=>`<option value="${i?'preset:'+p.id:''}">${esc(p.name)}</option>`).join('')+templates.map((t,i)=>`<option value="${i}">${esc(t.name)} · v${t.version}</option>`).join('');
    if(entry)select.disabled=true;templateSelect.append(select);form.append(templateSelect);
    const container=document.createElement('fieldset');container.className='clinical-questions';container.innerHTML='<legend>Histórico declarado</legend>';form.append(container);
    let currentQuestions=questions,templateId=payload.templateId,templateVersion=payload.templateVersion;
@@ -238,7 +239,12 @@ window.AURA_CONNECT=function(options){
    const rawAnswers=()=>Object.fromEntries(currentQuestions.map(q=>{const input=form.elements['answer_'+q.id];return [q.id,q.type==='multi'?Array.from(input.selectedOptions,o=>o.value):input.value]}));
    const refreshConditions=()=>{const a=rawAnswers();for(const q of currentQuestions){const label=container.querySelector('[data-question="'+q.id+'"]');label.hidden=!model.visibleQuestion(q,a);form.elements['answer_'+q.id].required=!!q.required&&!label.hidden}};
    container.addEventListener('input',refreshConditions);container.addEventListener('change',refreshConditions);
-   select.onchange=()=>{const t=select.value===''?null:templates[Number(select.value)];currentQuestions=t?structuredClone(t.schema):structuredClone(model.defaultQuestions);templateId=t?.id;templateVersion=t?.version;renderQuestions({});dirty=true};
+   let previousChoice='';
+   select.onchange=()=>{
+    if(Object.values(rawAnswers()).some(v=>Array.isArray(v)?v.length:!!v)&&!confirm('Trocar a ficha e limpar as respostas deste formulário? Os registros anteriores continuam preservados.')){select.value=previousChoice;return}
+    const preset=model.anamnesisPresets.find(p=>'preset:'+p.id===select.value),t=select.value!==''&&!preset?templates[Number(select.value)]:null;
+    currentQuestions=structuredClone(t?.schema||preset?.questions||model.defaultQuestions);templateId=t?.id;templateVersion=t?.version;previousChoice=select.value;renderQuestions({});dirty=true;
+   };
    renderQuestions(payload.answers||{});
    form.readQuestionnaire=review=>({questions:currentQuestions,answers:model.validateAnswers(currentQuestions,rawAnswers(),review),...(templateId?{templateId,templateVersion}:{})});
   }
@@ -318,6 +324,12 @@ window.AURA_CONNECT=function(options){
   try{
    const grants=await service.call('access',patientId);const body=find('#clinicalBody');body.replaceChildren(button('Voltar ao prontuário',reload));
    const form=document.createElement('form');form.autocomplete='off';form.innerHTML=`<h3>Acesso clínico desta paciente</h3><p>O proprietário concede acesso individual. O vínculo administrativo não concede leitura clínica automaticamente.</p><label class="field">E-mail de uma conta já vinculada<input name="email" type="email" required autocomplete="off"></label><label class="field">Profissional responsável<select name="professionalId">${state.names.map((n,i)=>(state.inactivePros||[]).includes(i)?'':`<option value="${i}">${esc(n)}</option>`).join('')}</select></label><label class="field">Categoria declarada<select name="profession"><option value="outra">Outra categoria</option><option value="enfermagem">Enfermagem</option></select></label><label class="field">Conselho e registro, se aplicável<input name="registry" maxlength="120"></label><label class="field"><span><input name="write" type="checkbox"> Pode registrar e revisar conteúdo clínico</span></label><label class="field"><span><input name="export" type="checkbox"> Pode exportar com autenticação em duas etapas</span></label><button type="submit">Conceder acesso à paciente</button>`;body.append(form);
+   const ownAccount=options.cloud.clinic.owner_id===service.actorId&&state.names.filter((_,i)=>!(state.inactivePros||[]).includes(i)).length===1;
+   if(ownAccount){
+    form.querySelector('h3').textContent='Ativar meu prontuário para esta paciente';form.querySelector('p').textContent='Confira seus dados profissionais e confirme uma vez para esta paciente. Você não precisa cadastrar outra conta ou outra clínica.';
+    form.elements.email.value=options.cloud.user;form.elements.write.checked=true;
+    form.querySelector('button[type="submit"]').textContent='Confirmar meus dados e acesso';
+   }
    const grant=async data=>{busy=true;try{await service.call('grant',patientId,{...data,requestId:crypto.randomUUID()});await manageAccess();info('Permissões atualizadas.')}catch(e){info(e.message)}finally{busy=false}};
    form.onsubmit=async e=>{e.preventDefault();if(busy)return;const f=new FormData(form),email=String(f.get('email')).trim().toLowerCase();try{const id=await service.call('resolve_member',patientId,{email});await grant({userId:id,professionalId:Number(f.get('professionalId')),profession:f.get('profession'),registry:f.get('registry'),write:f.has('write'),export:f.has('export'),enabled:true})}catch(e){info(e.message)}};
    for(const g of grants){const row=document.createElement('div');row.className='row';const text=document.createElement('span');text.textContent=g.email+' · '+(g.enabled?(g.write?'Leitura e registro':'Leitura'):'Revogado');row.append(text);if(g.enabled)row.append(button('Revogar',()=>grant({...g,enabled:false})));body.append(row)}

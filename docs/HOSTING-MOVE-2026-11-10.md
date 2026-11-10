@@ -2,6 +2,18 @@
 
 10/11/2026, America/Sao_Paulo. O proprietário autorizou a mudança para hospedagem gratuita com uso comercial e pediu aviso no endereço antigo. Criou conta Netlify via GitHub e autorizou a CLI pelo fluxo oficial. Nenhuma senha ou token foi solicitado no chat ou incluído no repositório.
 
+## Publicação concluída — atualização posterior ao planejamento abaixo
+
+O site https://usepellum.netlify.app foi publicado no mesmo Supabase, a partir do commit local 6022954, deployment Netlify 6af35e3c8944471fc11d6f31. A conta continuou credit-free, sem contratação ou extras. Apenas a proteção externa do frontend estático foi desativada; autenticação, licenças, isolamento e permissões do banco permanecem obrigatórios.
+
+As dez migrations novas previstas foram aplicadas pelo workspace SQL revisado: o histórico remoto passou a vinte versões e as 28 tabelas da aplicação consultadas mantiveram RLS ativo. A comparação no servidor confirmou que os conteúdos preexistentes de aura_clinics, aura_members e aura_history permaneceram iguais; não foram exportados pacientes nem registrados seus hashes neste documento. Não reaplicar a lista antiga de pendências nem usar db push na raiz sem resolver explicitamente os dois aliases históricos.
+
+O proprietário confirmou login na nova origem e pacientes, agenda, estoque e financeiro normais. Conferiu-se a inclusão dos dois Redirect URLs exatos da Netlify, preservando os anteriores, e o proprietário confirmou o Site URL novo. Isso não comprova entrega de novos e-mails de recuperação, troca real de senha ou funcionamento em todos os dispositivos físicos.
+
+Após essa confirmação, usepellum.vercel.app passou a servir apenas o aviso estático de mudança, deployment dpl_4wTDzq3XwFPAnFVVkv28jD62fKLK, com destino fixo na Netlify, no-store e no-referrer. Ambos os endereços retornaram HTTP 200. Não houve transferência de sessão ou dados de URL. Um futuro deploy automático da branch vinculada à Vercel pode substituir o aviso; não promover o legado por engano. Não houve push, merge ou consolidação de branches nesta publicação.
+
+O restante deste documento preserva o planejamento e as evidências locais anteriores à publicação.
+
 ## Alvos e ordem
 
 - Nova hospedagem: Netlify, conta com type_slug credit-free e nome Free confirmados pela API. Site usepellum, ID 8645548c-6ffe-4b15-8af6-e6de73bc1a31, endereço https://usepellum.netlify.app. Criado vazio, sem integração Git, sem plano pago, adicionais ou novo banco.

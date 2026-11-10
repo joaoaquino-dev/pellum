@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-10",
+  "timezone": "America/Sao_Paulo",
+  "scope": "Local synthetic fixtures; no production business-data writes",
+  "testFilesExecuted": 48,
+  "testFilesSkipped": 0,
+  "failedChecks": 0,
+  "dependencyAudits": 3,
+  "reportedVulnerabilities": 0,
+  "businessBrowserChecks": 67,
+  "clinicalBrowserChecks": 51,
+  "finalOptionalCustomizationRetested": true,
+  "viewports": [390, 820, 1366],
+  "screenshotsCaptured": false,
+  "verified": {
+    "soloDefault": true,
+    "optionalPartnership": true,
+    "inlinePartnerDoesNotCreateAccountOrMembership": true,
+    "inlinePartnerPreservesPrimaryMaterialsAndPrice": true,
+    "materialRemovalDoesNotDebitStock": true,
+    "manualCostAvailableWhenStockInsufficient": true,
+    "financialRoundingAndHistoricalMaterialCosts": true,
+    "managementSharingCollapsedWithScopeWarning": true,
+    "builtInAnamnesisPresets": true,
+    "conditionalAnswersAndSourceVersions": true,
+    "existingClinicalPermissionChecks": true,
+    "interruptedSavePausesWithoutSilentOverwrite": true
+  },
+  "databaseMigrations": 0,
+  "paidServicesContracted": 0,
+  "limitations": [
+    "Auth, MFA and external services use explicit test doubles",
+    "No physical mobile-device validation",
+    "Questionnaires require professional judgment; no automatic treatment indication",
+    "Clinical access remains explicitly granted per patient"
+  ]
+}

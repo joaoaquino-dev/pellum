@@ -36,7 +36,7 @@ try{
  await dialog.getByRole('button',{name:'Adicionar materiais',exact:true}).click();const form=dialog.locator('#clinicalStockForm');await form.waitFor();eq(await form.locator('[data-stock-row]').count(),1);eq(await form.locator('option[value="expired"]').count(),0);
  await mkdir('.codex/clinical-qa',{recursive:true});
  for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1366,height:900}]){
-  await page.setViewportSize(viewport);eq(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false);eq(await form.locator('input').evaluate(el=>el.getBoundingClientRect().height>=44),true);await dialog.screenshot({path:'.codex/clinical-qa/stock-'+viewport.width+'.png'});
+  await page.setViewportSize(viewport);eq(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1),false);eq(await form.locator('input').evaluate(el=>el.getBoundingClientRect().height>=44),true);
  }
  await page.setViewportSize({width:390,height:844});
  await form.getByRole('button',{name:'Adicionar outro material',exact:true}).click();eq(await form.locator('[data-stock-row]').count(),2);await form.getByRole('button',{name:'Remover este material',exact:true}).click();eq(await form.locator('[data-stock-row]').count(),1);

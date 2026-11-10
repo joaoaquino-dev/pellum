@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import {defaultQuestions,validateQuestions,validateAnswers,patientAge,criticalAlerts,createClinicalWriter,clinicalError,clinicalDisplayFields,procedureDetailLabels} from '../standalone/src/clinical-model.js';
+import {anamnesisPresets,defaultQuestions,validateQuestions,validateAnswers,patientAge,criticalAlerts,createClinicalWriter,clinicalError,clinicalDisplayFields,procedureDetailLabels} from '../standalone/src/clinical-model.js';
+for(const preset of anamnesisPresets){assert.ok(validateQuestions(preset.questions).length<=100);assert.deepEqual({...validateAnswers(preset.questions,{},true)},{});assert.equal(preset.questions.filter(q=>q.id==='allergy').length,1)}
+const facial=anamnesisPresets.find(p=>p.id==='facial');assert.equal(validateAnswers(facial.questions,{isotretinoin:'yes',isotretinoin_detail:'Relato fictício'}).isotretinoin_detail,'Relato fictício');
+const historical=structuredClone(defaultQuestions);assert.equal(historical.length,28);assert.equal(historical.some(q=>q.id==='isotretinoin'),false);
 assert.equal(new Set(clinicalDisplayFields('evaluation').map(([id])=>id)).size,clinicalDisplayFields('evaluation').length);
 assert.match(procedureDetailLabels('Toxina botulínica')[0],/diluição/);
 assert.match(procedureDetailLabels('Preenchimento facial')[1],/volumes/);
