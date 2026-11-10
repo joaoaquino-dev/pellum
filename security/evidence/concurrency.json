@@ -1,0 +1,40 @@
+{
+  "cas": [
+    {
+      "success": true,
+      "stale": false
+    },
+    {
+      "success": false,
+      "stale": true
+    }
+  ],
+  "idempotent": [
+    {
+      "success": true
+    },
+    {
+      "success": true
+    }
+  ],
+  "stored": [
+    {
+      "test": "parallel_cas",
+      "revision": 1,
+      "receipt_events": 2,
+      "received": 400,
+      "stock": 198
+    },
+    {
+      "test": "parallel_idempotency",
+      "revision": 1,
+      "receipt_events": 2,
+      "received": 400,
+      "stock": 198
+    }
+  ],
+  "baseline_receipt_events": 1,
+  "baseline_received": 300,
+  "cleanup_succeeded": true,
+  "method": "Two concurrent Supabase execute_sql connections with separate transactions, followed by a data query and disposable fixture cleanup."
+}

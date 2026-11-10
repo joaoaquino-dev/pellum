@@ -1,0 +1,1 @@
+{"name":"pellum-independent","version":"0.1.0","private":true,"type":"module","scripts":{"build":"node build.mjs","check":"node --check src/main.js"},"dependencies":{"@supabase/supabase-js":"2.118.0","esbuild":"0.28.2"}}
