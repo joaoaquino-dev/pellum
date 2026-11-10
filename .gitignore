@@ -31,6 +31,13 @@ yarn-error.log*
 .dev.vars*
 *.pem
 
+# Patient database backups and protected recovery keys never belong in Git.
+*.pellum
+*.dump
+*.dpapi
+*.incomplete
+/backups/
+
 # Checkout-local tool state
 /.wrangler/
 /.sites-runtime/
