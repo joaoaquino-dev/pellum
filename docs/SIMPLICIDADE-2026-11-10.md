@@ -27,3 +27,11 @@ Cada registro guarda suas próprias perguntas e respostas. Modelos novos não re
 Testes locais com pacientes fictícios, navegador e SQL descartável verificam cálculos, estoque, atalhos, permissões existentes, modelos, histórico, adendos e larguras de celular/tablet/notebook. Capturas automáticas de tela foram removidas conforme preferência do proprietário; verificações de layout usam medidas do documento, sem imagens. Isso não equivale a validação em aparelhos físicos ou revisão clínica/jurídica dos modelos.
 
 Sem migration, alteração de permissões SQL, contratação, importação de dados ou testes em pacientes reais nesta melhoria.
+
+## Publicação verificada
+
+Publicada em https://usepellum.netlify.app, commit local bb61f72, deployment 6af363f12bde11f004f9852f. Conta conferida novamente como credit-free/Free, sem plano pago. Os seis arquivos públicos consultados retornaram HTTP 200; main.js, runtime.js, style.css e sitemap.xml coincidiram byte a byte com o pacote revisado. Os dois HTMLs coincidiram após retirar o comentário/selo injetados pela hospedagem e normalizar quebras de linha. O aviso no endereço antigo permaneceu ativo, apontando para a Netlify.
+
+A [documentação da hospedagem](https://docs.netlify.com/manage/projects/powered-by-netlify-badge/) descreve a injeção do selo no Free. A tentativa de desligar o selo pelo campo da API retornou 422 e não foi considerada aplicada; nenhuma alteração de plano foi solicitada. A política de scripts da aplicação foi preservada. Essa marcação do provedor não integra o código clínico.
+
+Validação local: 48 arquivos executados, zero falhas ou arquivos pulados, três auditorias sem vulnerabilidades reportadas. O fluxo de negócio teve 67 verificações; o prontuário teve 51, incluindo seleção dos modelos prontos. Depois de recolher a personalização opcional, o teste do prontuário foi repetido e passou. A conferência remota foi somente de arquivos públicos, sem leitura/gravação de pacientes.

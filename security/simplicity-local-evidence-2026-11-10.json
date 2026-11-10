@@ -10,6 +10,18 @@
   "businessBrowserChecks": 67,
   "clinicalBrowserChecks": 51,
   "finalOptionalCustomizationRetested": true,
+  "publication": {
+    "origin": "https://usepellum.netlify.app",
+    "sourceCommit": "bb61f72",
+    "deploymentId": "6af363f12bde11f004f9852f",
+    "publicFilesChecked": 6,
+    "allPublicFilesHTTP200": true,
+    "javascriptAndCSSMatchBuildExactly": true,
+    "htmlMatchesAfterHostingBadgeAndLineBreakNormalization": true,
+    "oldAddressStillShowsMoveNotice": true,
+    "accountPlan": "credit-free",
+    "authenticatedPatientRequests": 0
+  },
   "viewports": [390, 820, 1366],
   "screenshotsCaptured": false,
   "verified": {
