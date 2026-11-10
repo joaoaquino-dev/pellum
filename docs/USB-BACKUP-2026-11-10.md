@@ -1,5 +1,7 @@
 # Cópia no pendrive e chave portátil
 
+Atualização posterior, 10/11 às 14:42 (São Paulo): o proprietário concluiu a entrada privada da senha. COMPLETE.json confirmou chave portátil verificada, backup real do USB autenticado e recuperação sem dependência de DPAPI. O agente conferiu novamente o inventário e os hashes dos arquivos em D:, sem ler a senha ou a chave. Evidência: security/usb-backup-completion-evidence-2026-11-10.json. As menções abaixo a senha pendente descrevem a preparação anterior e foram resolvidas nesta etapa. Não houve ensaio físico em outro computador nem publicação da aplicação.
+
 10/11/2026, America/Sao_Paulo. O proprietário indicou USB DISK em D:. Volume removível FAT32, saudável, com aproximadamente 2,6 GB disponíveis antes da cópia. Nenhuma formatação, exclusão, instalação de serviço ou alteração de produção.
 
 ## Estado da entrega
