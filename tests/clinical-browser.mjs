@@ -47,6 +47,7 @@ const server=createServer(async(req,res)=>{
    const b=JSON.parse(raw);rpcActions.push(b.p_action);let data,error;
    if(deny)error={code:'42501',message:'Denied'};
    else if(conflictSave&&b.p_action==='save'){conflictSave=false;error={code:'40001',message:'CLINICAL_CONFLICT'}}
+   else if(b.__rpcName==='aura_clinical_form_template_rpc')error={code:'PGRST202',message:'Form templates not enabled in this isolated media fixture'};
    else try{await login('owner',b.__aal||'aal1');data=b.__rpcName==='aura_clinical_document_rpc'?(await db.query('select public.aura_clinical_document_rpc($1,$2,$3,$4) result',[b.p_action,b.p_clinic,b.p_patient,JSON.stringify(b.p_body)])).rows[0].result:await rpc(b.p_action,b.p_body,b.p_patient,b.p_clinic)}catch(e){error={code:e.code,message:e.message}}
    if(loseSave&&b.p_action==='save'){loseSave=false;res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:{message:'Simulated response lost after commit'}}));return}
    res.setHeader('Content-Type','application/json');res.end(JSON.stringify({data,error}));return;
