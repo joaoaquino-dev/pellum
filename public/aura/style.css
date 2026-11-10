@@ -2,7 +2,7 @@
 /* Touch-first layout: phone baseline, then tablet and desktop. */
 html{overflow-x:hidden}main,.content,.grid>*{min-width:0}button,.button,nav a{min-height:44px}input,select{min-height:46px;font-size:16px}button:focus-visible,a:focus-visible{outline:3px solid #b7c991;outline-offset:3px}.calendar-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}.calendar-controls{display:flex;align-items:center;gap:8px;margin-bottom:22px}.calendar-controls h2{flex:1;text-transform:capitalize;font-size:17px}.calendar-controls button{padding:10px 14px}.weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.weekdays span{text-align:center;font-size:9px;color:var(--muted);padding:10px 0}.calendar-day{padding:8px 2px;min-height:65px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;font-size:14px}.calendar-day.today{border:2px solid #8da277}.calendar-day.selected{background:var(--green);color:white;border-color:var(--green)}.calendar-count{font-size:10px;color:#5d7959;background:#edf2e8;padding:2px 6px;border-radius:5px}.calendar-count.empty-count{background:none;color:transparent}.desktop-word{display:none}.calendar-legend{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted);margin-top:17px}.deleted-filter{font-size:12px;color:var(--muted);padding-bottom:15px}.appointment-card{border-top:1px solid var(--line);padding:18px 0}.appointment-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.appointment-title strong{font-size:19px}.appointment-card small{margin:8px 0 15px}.appointment-card .field{margin:10px 0 0}.day-card .cardhead h2{text-transform:capitalize}.guide{margin:0 0 25px}.result{overflow-wrap:anywhere}.cardhead{gap:10px}.cardhead>*{min-width:0}.formgrid>*{min-width:0}.toolbar input,.toolbar select{max-width:100%}
 @media(max-width:767px){aside{position:static;width:100%;height:auto;display:block;padding:14px 16px}.brand{font-size:36px;margin:0}.brand span,.workspace,.navlabel,.asidefoot{display:none}nav{display:flex;overflow-x:auto;gap:4px;margin-top:12px;padding-bottom:3px}nav a{white-space:nowrap;font-size:12px;padding:10px 11px;gap:6px;margin:0}nav a b{width:auto;font-size:16px}main{margin:0}header{height:48px;padding:0 16px}.content{padding:16px 12px 35px}.heading{align-items:flex-start;flex-wrap:wrap}h1{font-size:29px}.heading button{font-size:13px;padding:12px 16px}.grid{grid-template-columns:minmax(0,1fr)!important}.formgrid{grid-template-columns:1fr}.card{padding:17px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat strong{font-size:23px;overflow-wrap:anywhere}.stat .symbol{display:none}.notice span{display:block;margin:6px 0}.calendar-card{padding:12px}.calendar-controls{gap:5px}.calendar-controls h2{font-size:15px}.calendar-controls button{padding:8px 11px}.calendar-legend{font-size:9px}.result .row{align-items:flex-start}.row{flex-wrap:wrap}.tablewrap table{min-width:500px}dialog{padding:22px;max-width:calc(100vw - 24px)}.actions{flex-wrap:wrap}.actions button{flex:1}.pill{display:none}}
-@media(min-width:768px) and (max-width:1100px){aside{width:176px}main{margin-left:176px}.content{padding:22px}.calendar-layout{grid-template-columns:minmax(0,1fr)}.calendar-day{min-height:82px}.desktop-word{display:inline}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:768px) and (max-width:1100px){aside{width:176px}main{margin-left:176px}.content{padding:20px 18px}.calendar-layout{grid-template-columns:minmax(0,1fr)}.calendar-day{min-height:82px}.desktop-word{display:inline}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}}
 @media(min-width:1101px){.calendar-layout{grid-template-columns:minmax(0,1.65fr) minmax(285px,1fr)}.calendar-day{min-height:87px}.desktop-word{display:inline}}
 .auth-shell{min-height:80vh;display:grid;place-items:center;padding:24px 0}.auth-card{width:min(450px,100%);padding:32px}.auth-card .brand{display:block;margin:0 0 35px}.auth-card h1{font-size:29px}.auth-card form{margin-top:24px}.auth-card form>button{width:100%}.auth-card .toolbar{gap:5px}.auth-card .textbtn{padding:8px;font-size:12px}
 [hidden]{display:none!important}
@@ -102,19 +102,24 @@ body:has(dialog[open]){overflow:hidden}
   .responsive-table,.responsive-table tbody,.responsive-table tr,.responsive-table td{display:block;width:100%}
   .tablewrap .responsive-table{min-width:0}
   .responsive-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  .responsive-table tbody{display:grid;gap:16px}
-  .responsive-table tbody tr{border-bottom:1px solid var(--line);padding-bottom:16px}
-  .responsive-table tbody tr:last-child{border-bottom:0;padding-bottom:0}
-  .responsive-table td{border:0;padding:7px 0}
-  .responsive-table td:first-child{font-size:14px;font-weight:600}
+  .responsive-table tbody{display:grid;gap:12px}
+  .responsive-table tbody tr{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
+  .responsive-table tbody tr:last-child{border-bottom:1px solid var(--line);padding-bottom:12px}
+  .responsive-table td{border:0;padding:4px 0}
+  .responsive-table td:first-child{font-size:15px;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:4px}
   .responsive-table td small{font-weight:400}
-  .mobile-cell-label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:3px}
-  .responsive-table .table-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-top:12px}
-  .responsive-table .table-actions>.mobile-cell-label{flex-basis:100%}
-  .responsive-table .table-actions>button,.responsive-table .table-actions>a.button{margin:0;flex:1 1 120px}
+  .mobile-cell-label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:1px}
+  .responsive-table .table-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:10px;margin-top:6px;border-top:1px dashed var(--line)}
+  .responsive-table .table-actions>.mobile-cell-label{display:none}
+  .responsive-table .table-actions>button,.responsive-table .table-actions>a.button{margin:0;flex:1 1 auto;min-height:38px;padding:8px 12px;font-size:13px}
   .responsive-table .table-actions>small{flex-basis:100%}
   .patient-tablewrap .patient-table{min-width:0}
-  dialog{padding:20px 16px;width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}
+  dialog{padding:20px 16px;width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overscroll-behavior:contain}
+  @supports(padding:max(0px)){
+    dialog{padding-bottom:max(20px,env(safe-area-inset-bottom,20px))}
+    .actions{padding-bottom:max(0px,env(safe-area-inset-bottom,0px))}
+    .content{padding-bottom:max(35px,env(safe-area-inset-bottom,35px))}
+  }
   .auth-shell{min-height:80svh;padding:16px 0}
   .auth-card{padding:24px 20px}
   .auth-card .brand{margin-bottom:26px}
