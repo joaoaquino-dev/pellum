@@ -1,0 +1,1235 @@
+{
+  "observedAt": "2026-11-10T15:48:24.488Z",
+  "project": "iddiiisimjaquhxhskcn",
+  "scope": "Read-only PostgreSQL catalogs. No business rows, identities, sessions, credentials or patient exports.",
+  "catalog": {
+    "tables": [
+      {
+        "rls": true,
+        "name": "licenses",
+        "schema": "aura_private"
+      },
+      {
+        "rls": true,
+        "name": "platform_admins",
+        "schema": "aura_private"
+      },
+      {
+        "rls": true,
+        "name": "platform_audit",
+        "schema": "aura_private"
+      },
+      {
+        "rls": true,
+        "name": "rate_limits",
+        "schema": "aura_private"
+      },
+      {
+        "rls": true,
+        "name": "request_results",
+        "schema": "aura_private"
+      },
+      {
+        "rls": true,
+        "name": "aura_clinics",
+        "schema": "public"
+      },
+      {
+        "rls": true,
+        "name": "aura_history",
+        "schema": "public"
+      },
+      {
+        "rls": true,
+        "name": "aura_members",
+        "schema": "public"
+      }
+    ],
+    "columns": [
+      {
+        "name": "email",
+        "schema": "aura_private",
+        "position": 1,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "licenses",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "status",
+        "schema": "aura_private",
+        "position": 2,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "licenses",
+        "is_nullable": "NO",
+        "column_default": "'pending'::text"
+      },
+      {
+        "name": "expires_at",
+        "schema": "aura_private",
+        "position": 3,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "licenses",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "name": "max_clinics",
+        "schema": "aura_private",
+        "position": 4,
+        "udt_name": "int4",
+        "data_type": "integer",
+        "table_name": "licenses",
+        "is_nullable": "NO",
+        "column_default": "3"
+      },
+      {
+        "name": "revoked_before",
+        "schema": "aura_private",
+        "position": 5,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "licenses",
+        "is_nullable": "NO",
+        "column_default": "'-infinity'::timestamp with time zone"
+      },
+      {
+        "name": "updated_at",
+        "schema": "aura_private",
+        "position": 6,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "licenses",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "name": "email",
+        "schema": "aura_private",
+        "position": 1,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "platform_admins",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "enabled",
+        "schema": "aura_private",
+        "position": 2,
+        "udt_name": "bool",
+        "data_type": "boolean",
+        "table_name": "platform_admins",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "name": "id",
+        "schema": "aura_private",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "platform_audit",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "name": "actor_id",
+        "schema": "aura_private",
+        "position": 2,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "platform_audit",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "action",
+        "schema": "aura_private",
+        "position": 3,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "platform_audit",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "target",
+        "schema": "aura_private",
+        "position": 4,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "platform_audit",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "name": "created_at",
+        "schema": "aura_private",
+        "position": 5,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "platform_audit",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "name": "details",
+        "schema": "aura_private",
+        "position": 6,
+        "udt_name": "jsonb",
+        "data_type": "jsonb",
+        "table_name": "platform_audit",
+        "is_nullable": "NO",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "name": "user_id",
+        "schema": "aura_private",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "rate_limits",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "bucket",
+        "schema": "aura_private",
+        "position": 2,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "rate_limits",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "window_start",
+        "schema": "aura_private",
+        "position": 3,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "rate_limits",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "n",
+        "schema": "aura_private",
+        "position": 4,
+        "udt_name": "int4",
+        "data_type": "integer",
+        "table_name": "rate_limits",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "user_id",
+        "schema": "aura_private",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "request_results",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "request_id",
+        "schema": "aura_private",
+        "position": 2,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "request_results",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "body_hash",
+        "schema": "aura_private",
+        "position": 3,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "request_results",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "response",
+        "schema": "aura_private",
+        "position": 4,
+        "udt_name": "jsonb",
+        "data_type": "jsonb",
+        "table_name": "request_results",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "created_at",
+        "schema": "aura_private",
+        "position": 5,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "request_results",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "name": "id",
+        "schema": "public",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "name": "owner_id",
+        "schema": "public",
+        "position": 2,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "name",
+        "schema": "public",
+        "position": 3,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "data",
+        "schema": "public",
+        "position": 4,
+        "udt_name": "jsonb",
+        "data_type": "jsonb",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "revision",
+        "schema": "public",
+        "position": 5,
+        "udt_name": "int8",
+        "data_type": "bigint",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "name": "updated_at",
+        "schema": "public",
+        "position": 6,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "aura_clinics",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "name": "id",
+        "schema": "public",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "name": "clinic_id",
+        "schema": "public",
+        "position": 2,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "actor",
+        "schema": "public",
+        "position": 3,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "created_at",
+        "schema": "public",
+        "position": 4,
+        "udt_name": "timestamptz",
+        "data_type": "timestamp with time zone",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "name": "action",
+        "schema": "public",
+        "position": 5,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "data",
+        "schema": "public",
+        "position": 6,
+        "udt_name": "jsonb",
+        "data_type": "jsonb",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "revision",
+        "schema": "public",
+        "position": 7,
+        "udt_name": "int8",
+        "data_type": "bigint",
+        "table_name": "aura_history",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "clinic_id",
+        "schema": "public",
+        "position": 1,
+        "udt_name": "uuid",
+        "data_type": "uuid",
+        "table_name": "aura_members",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "email",
+        "schema": "public",
+        "position": 2,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "aura_members",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "name": "role",
+        "schema": "public",
+        "position": 3,
+        "udt_name": "text",
+        "data_type": "text",
+        "table_name": "aura_members",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "aura_platform_audit_date",
+        "schema": "aura_private",
+        "definition": "CREATE INDEX aura_platform_audit_date ON aura_private.platform_audit USING btree (created_at DESC)"
+      },
+      {
+        "name": "licenses_pkey",
+        "schema": "aura_private",
+        "definition": "CREATE UNIQUE INDEX licenses_pkey ON aura_private.licenses USING btree (email)"
+      },
+      {
+        "name": "platform_admins_pkey",
+        "schema": "aura_private",
+        "definition": "CREATE UNIQUE INDEX platform_admins_pkey ON aura_private.platform_admins USING btree (email)"
+      },
+      {
+        "name": "platform_audit_pkey",
+        "schema": "aura_private",
+        "definition": "CREATE UNIQUE INDEX platform_audit_pkey ON aura_private.platform_audit USING btree (id)"
+      },
+      {
+        "name": "rate_limits_pkey",
+        "schema": "aura_private",
+        "definition": "CREATE UNIQUE INDEX rate_limits_pkey ON aura_private.rate_limits USING btree (user_id, bucket)"
+      },
+      {
+        "name": "request_results_pkey",
+        "schema": "aura_private",
+        "definition": "CREATE UNIQUE INDEX request_results_pkey ON aura_private.request_results USING btree (user_id, request_id)"
+      },
+      {
+        "name": "aura_clinics_owner_idx",
+        "schema": "public",
+        "definition": "CREATE INDEX aura_clinics_owner_idx ON public.aura_clinics USING btree (owner_id)"
+      },
+      {
+        "name": "aura_clinics_pkey",
+        "schema": "public",
+        "definition": "CREATE UNIQUE INDEX aura_clinics_pkey ON public.aura_clinics USING btree (id)"
+      },
+      {
+        "name": "aura_history_clinic_date_idx",
+        "schema": "public",
+        "definition": "CREATE INDEX aura_history_clinic_date_idx ON public.aura_history USING btree (clinic_id, created_at DESC)"
+      },
+      {
+        "name": "aura_history_pkey",
+        "schema": "public",
+        "definition": "CREATE UNIQUE INDEX aura_history_pkey ON public.aura_history USING btree (id)"
+      },
+      {
+        "name": "aura_history_revision",
+        "schema": "public",
+        "definition": "CREATE UNIQUE INDEX aura_history_revision ON public.aura_history USING btree (clinic_id, revision)"
+      },
+      {
+        "name": "aura_members_email_idx",
+        "schema": "public",
+        "definition": "CREATE INDEX aura_members_email_idx ON public.aura_members USING btree (email, clinic_id)"
+      },
+      {
+        "name": "aura_members_pkey",
+        "schema": "public",
+        "definition": "CREATE UNIQUE INDEX aura_members_pkey ON public.aura_members USING btree (clinic_id, email)"
+      }
+    ],
+    "policies": [
+      {
+        "cmd": "SELECT",
+        "name": "aura_clinic_read",
+        "qual": "( SELECT aura_private.can_access(aura_clinics.id, false) AS can_access)",
+        "roles": [
+          "authenticated"
+        ],
+        "schema": "public",
+        "permissive": "PERMISSIVE",
+        "table_name": "aura_clinics",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "name": "aura_history_owner_read",
+        "qual": "( SELECT aura_private.can_access(aura_history.clinic_id, true) AS can_access)",
+        "roles": [
+          "authenticated"
+        ],
+        "schema": "public",
+        "permissive": "PERMISSIVE",
+        "table_name": "aura_history",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "name": "aura_members_owner_read",
+        "qual": "( SELECT aura_private.can_access(aura_members.clinic_id, true) AS can_access)",
+        "roles": [
+          "authenticated"
+        ],
+        "schema": "public",
+        "permissive": "PERMISSIVE",
+        "table_name": "aura_members",
+        "with_check": null
+      }
+    ],
+    "triggers": [],
+    "functions": [
+      {
+        "args": "",
+        "name": "account_active",
+        "schema": "aura_private",
+        "definition_hash": "b926c506f47fc806cfbab632d3b59605"
+      },
+      {
+        "args": "p_action text, p_body jsonb",
+        "name": "admin_rpc",
+        "schema": "aura_private",
+        "definition_hash": "4d366a4e0a98b918a6db991d125a13a5"
+      },
+      {
+        "args": "d jsonb, old_d jsonb",
+        "name": "assert_state",
+        "schema": "aura_private",
+        "definition_hash": "1a637c8f65d8aa925bb00b16ccf673ee"
+      },
+      {
+        "args": "p_clinic uuid, p_owner boolean",
+        "name": "can_access",
+        "schema": "aura_private",
+        "definition_hash": "cf64cd45f43834188d33a4695a419453"
+      },
+      {
+        "args": "",
+        "name": "identity",
+        "schema": "aura_private",
+        "definition_hash": "8b628cb04808d48231f95623dbba700e"
+      },
+      {
+        "args": "",
+        "name": "is_admin",
+        "schema": "aura_private",
+        "definition_hash": "8016a7435046bd684223472c0719b654"
+      },
+      {
+        "args": "p_email text",
+        "name": "is_licensed",
+        "schema": "aura_private",
+        "definition_hash": "21a9e68ef354894b0eccbe36d84ffcdd"
+      },
+      {
+        "args": "p_bucket text, p_limit integer",
+        "name": "limit_request",
+        "schema": "aura_private",
+        "definition_hash": "cda0890272168cfdf9909bf0c6eee249"
+      },
+      {
+        "args": "p_action text, p_clinic uuid, p_body jsonb",
+        "name": "rpc",
+        "schema": "aura_private",
+        "definition_hash": "aaac2cf29277915c9c45344031696c48"
+      },
+      {
+        "args": "p_action text, p_clinic uuid, p_body jsonb",
+        "name": "rpc_core",
+        "schema": "aura_private",
+        "definition_hash": "e4a6a800fe4133eccb566edd1be51123"
+      },
+      {
+        "args": "value text",
+        "name": "valid_brazil_phone",
+        "schema": "aura_private",
+        "definition_hash": "a72b1720d333c8000face2429f139462"
+      },
+      {
+        "args": "v text",
+        "name": "valid_date",
+        "schema": "aura_private",
+        "definition_hash": "8b0f89e494165682b4c0b5143b97e2bb"
+      },
+      {
+        "args": "v jsonb, lo numeric, hi numeric, places integer",
+        "name": "valid_number",
+        "schema": "aura_private",
+        "definition_hash": "8a59183fab57dfca123ff871990a76c1"
+      },
+      {
+        "args": "p_action text, p_body jsonb",
+        "name": "aura_admin_rpc",
+        "schema": "public",
+        "definition_hash": "2d5e7a7e645d041e06752db8be045563"
+      },
+      {
+        "args": "p_action text, p_clinic uuid, p_body jsonb",
+        "name": "aura_rpc",
+        "schema": "public",
+        "definition_hash": "306f4d3123eebaa289dbe5cbd255e18c"
+      }
+    ],
+    "privileges": [
+      {
+        "kind": "function",
+        "name": "account_active()",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "account_active()",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "admin_rpc(p_action text, p_body jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "admin_rpc(p_action text, p_body jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": true
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "assert_state(d jsonb, old_d jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "assert_state(d jsonb, old_d jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "can_access(p_clinic uuid, p_owner boolean)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "can_access(p_clinic uuid, p_owner boolean)",
+        "role": "authenticated",
+        "access": {
+          "execute": true
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "identity()",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "identity()",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "is_admin()",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "is_admin()",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "is_licensed(p_email text)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "is_licensed(p_email text)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "licenses",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "licenses",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "limit_request(p_bucket text, p_limit integer)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "limit_request(p_bucket text, p_limit integer)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "platform_admins",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "platform_admins",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "platform_audit",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "platform_audit",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "rate_limits",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "rate_limits",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "request_results",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "table",
+        "name": "request_results",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "rpc(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "rpc(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": true
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "rpc_core(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "rpc_core(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_brazil_phone(value text)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_brazil_phone(value text)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_date(v text)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_date(v text)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_number(v jsonb, lo numeric, hi numeric, places integer)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "valid_number(v jsonb, lo numeric, hi numeric, places integer)",
+        "role": "authenticated",
+        "access": {
+          "execute": false
+        },
+        "schema": "aura_private"
+      },
+      {
+        "kind": "function",
+        "name": "aura_admin_rpc(p_action text, p_body jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "function",
+        "name": "aura_admin_rpc(p_action text, p_body jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": true
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_clinics",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_clinics",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": true,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_history",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_history",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": true,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_members",
+        "role": "anon",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "table",
+        "name": "aura_members",
+        "role": "authenticated",
+        "access": {
+          "delete": false,
+          "insert": false,
+          "select": true,
+          "update": false,
+          "truncate": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "function",
+        "name": "aura_rpc(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "anon",
+        "access": {
+          "execute": false
+        },
+        "schema": "public"
+      },
+      {
+        "kind": "function",
+        "name": "aura_rpc(p_action text, p_clinic uuid, p_body jsonb)",
+        "role": "authenticated",
+        "access": {
+          "execute": true
+        },
+        "schema": "public"
+      }
+    ],
+    "constraints": [
+      {
+        "name": "licenses_email_check",
+        "schema": "aura_private",
+        "definition": "CHECK ((email = lower(TRIM(BOTH FROM email))))",
+        "table_name": "licenses"
+      },
+      {
+        "name": "licenses_max_clinics_check",
+        "schema": "aura_private",
+        "definition": "CHECK (((max_clinics >= 1) AND (max_clinics <= 20)))",
+        "table_name": "licenses"
+      },
+      {
+        "name": "licenses_pkey",
+        "schema": "aura_private",
+        "definition": "PRIMARY KEY (email)",
+        "table_name": "licenses"
+      },
+      {
+        "name": "licenses_status_check",
+        "schema": "aura_private",
+        "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'active'::text, 'suspended'::text])))",
+        "table_name": "licenses"
+      },
+      {
+        "name": "platform_admins_email_check",
+        "schema": "aura_private",
+        "definition": "CHECK ((email = lower(TRIM(BOTH FROM email))))",
+        "table_name": "platform_admins"
+      },
+      {
+        "name": "platform_admins_pkey",
+        "schema": "aura_private",
+        "definition": "PRIMARY KEY (email)",
+        "table_name": "platform_admins"
+      },
+      {
+        "name": "platform_audit_pkey",
+        "schema": "aura_private",
+        "definition": "PRIMARY KEY (id)",
+        "table_name": "platform_audit"
+      },
+      {
+        "name": "rate_limits_pkey",
+        "schema": "aura_private",
+        "definition": "PRIMARY KEY (user_id, bucket)",
+        "table_name": "rate_limits"
+      },
+      {
+        "name": "request_results_pkey",
+        "schema": "aura_private",
+        "definition": "PRIMARY KEY (user_id, request_id)",
+        "table_name": "request_results"
+      },
+      {
+        "name": "aura_clinics_name_check",
+        "schema": "public",
+        "definition": "CHECK (((length(TRIM(BOTH FROM name)) >= 1) AND (length(TRIM(BOTH FROM name)) <= 100)))",
+        "table_name": "aura_clinics"
+      },
+      {
+        "name": "aura_clinics_owner_id_fkey",
+        "schema": "public",
+        "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id)",
+        "table_name": "aura_clinics"
+      },
+      {
+        "name": "aura_clinics_pkey",
+        "schema": "public",
+        "definition": "PRIMARY KEY (id)",
+        "table_name": "aura_clinics"
+      },
+      {
+        "name": "aura_clinics_revision_check",
+        "schema": "public",
+        "definition": "CHECK ((revision >= 0))",
+        "table_name": "aura_clinics"
+      },
+      {
+        "name": "aura_history_clinic_id_fkey",
+        "schema": "public",
+        "definition": "FOREIGN KEY (clinic_id) REFERENCES aura_clinics(id) ON DELETE CASCADE",
+        "table_name": "aura_history"
+      },
+      {
+        "name": "aura_history_pkey",
+        "schema": "public",
+        "definition": "PRIMARY KEY (id)",
+        "table_name": "aura_history"
+      },
+      {
+        "name": "aura_members_clinic_id_fkey",
+        "schema": "public",
+        "definition": "FOREIGN KEY (clinic_id) REFERENCES aura_clinics(id) ON DELETE CASCADE",
+        "table_name": "aura_members"
+      },
+      {
+        "name": "aura_members_email_check",
+        "schema": "public",
+        "definition": "CHECK ((email = lower(TRIM(BOTH FROM email))))",
+        "table_name": "aura_members"
+      },
+      {
+        "name": "aura_members_pkey",
+        "schema": "public",
+        "definition": "PRIMARY KEY (clinic_id, email)",
+        "table_name": "aura_members"
+      },
+      {
+        "name": "aura_members_role_check",
+        "schema": "public",
+        "definition": "CHECK ((role = ANY (ARRAY['owner'::text, 'editor'::text, 'manager'::text])))",
+        "table_name": "aura_members"
+      }
+    ]
+  }
+}

@@ -67,3 +67,5 @@ CLINICAL-FORM-TEMPLATES-2026-11-10.md registra o editor posterior de modelos reu
 CLINICAL-FOLLOWUPS-2026-11-10.md registra previsões a partir da evolução, listas de retornos, agendamento na agenda existente, conclusão/reabertura e auditoria. Sem mensagens automáticas ou serviços novos; validação local, ainda não publicada.
 
 CLINICAL-SEARCH-2026-11-10.md registra a pesquisa no histórico completo da paciente, com texto, tipo, período de atendimento e versões anteriores opcionais. Substitui a busca restrita à página, preserva permissões clínicas e não usa serviço externo. Validação local, ainda não publicada.
+
+RELEASE-PREPARATION-2026-11-10.md registra a comparação datada de catálogo remoto com a base local, ensaio incremental preservando paciente fictícia, recuperação da cadeia atual e roteiro de liberação. A Vercel agora informa produção externa a esta continuidade no commit 8b550b77/main; isso atualiza a evidência antiga do handoff. Histórico divergente não foi reparado; nenhuma escrita remota ou publicação feita nesta continuidade.
