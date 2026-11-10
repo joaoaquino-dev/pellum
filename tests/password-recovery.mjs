@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {updateRecoveredPassword,passwordRecoveryMessage} from '../standalone/src/password-recovery.js';
+const validSession=async()=>({data:{session:{user:{id:'test'}}},error:null});
+let writes=0,verifications=0;
+const auth={getSession:validSession,updateUser:async()=>++writes===1?{error:{code:'insufficient_aal'}}:{data:{user:{}},error:null}};
+await updateRecoveredPassword(auth,async options=>{verifications++;assert.equal(options.allowEnrollment,false)},'test-only-placeholder');
+assert.equal(writes,2);assert.equal(verifications,1);
+writes=0;await updateRecoveredPassword({getSession:validSession,updateUser:async()=>{writes++;return{data:{user:{}},error:null}}},()=>assert.fail('No MFA for ordinary successful update'),'test-only-placeholder');assert.equal(writes,1);
+writes=0;await assert.rejects(()=>updateRecoveredPassword({getSession:async()=>({data:{session:null}}),updateUser:()=>{writes++}},()=>{},'test-only-placeholder'),e=>e.code==='recovery_session_missing');assert.equal(writes,0);
+writes=0;await assert.rejects(()=>updateRecoveredPassword(auth,async()=>{throw{code:'mfa_cancelled'}},'test-only-placeholder'),e=>e.code==='mfa_cancelled');assert.equal(writes,1);
+writes=0;await assert.rejects(()=>updateRecoveredPassword({getSession:validSession,updateUser:async()=>{writes++;return{error:{code:'insufficient_aal'}}}},async()=>{},'test-only-placeholder'),e=>e.code==='insufficient_aal');assert.equal(writes,2);
+for(const code of ['recovery_session_missing','flow_state_expired','bad_code_verifier','otp_expired'])assert.match(passwordRecoveryMessage({code}),/mesmo navegador/);
+assert.match(passwordRecoveryMessage({code:'same_password'}),/diferente/);assert.match(passwordRecoveryMessage({code:'mfa_cancelled'}),/cancelada/);
+console.log('PASS: MFA challenge retries once without enrollment; normal account has no challenge; missing session and cancelled verification never write; invalid links and password errors are actionable.');

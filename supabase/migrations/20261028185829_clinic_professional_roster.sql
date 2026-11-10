@@ -1,0 +1,142 @@
+-- Forward-only: preserve existing clinic snapshots and positional professional IDs.
+CREATE OR REPLACE FUNCTION aura_private.assert_state(d jsonb, old_d jsonb DEFAULT '{}'::jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+#variable_conflict use_column
+declare col text;j jsonb;prev jsonb;p jsonb;m jsonb;e jsonb;v numeric;s numeric;t numeric;a numeric;f numeric;recipient numeric;costs numeric;n integer;i integer;oldlist jsonb;newlist jsonb;
+begin
+ if d is null or jsonb_typeof(d)<>'object' or octet_length(d::text)>3000000 or exists(select 1 from jsonb_object_keys(d) k where k not in ('names','percent','patients','appointments','records','products','expenses','inactivePros')) then raise exception 'Estado inválido' using errcode='22023';end if;
+ if jsonb_typeof(d->'names') is distinct from 'array' or jsonb_array_length(d->'names') not between 1 and 20 or exists(select 1 from jsonb_array_elements(d->'names') x where jsonb_typeof(x)<>'string' or length(trim(x#>>'{}')) not between 1 and 60) or not aura_private.valid_number(d->'percent',0,100,2) then raise exception 'Configuração inválida' using errcode='22023';end if;
+
+ if jsonb_typeof(coalesce(d->'inactivePros','[]'))<>'array' or exists(select 1 from jsonb_array_elements(coalesce(d->'inactivePros','[]')) x where not aura_private.valid_number(x,0,jsonb_array_length(d->'names')-1,0)) or (select count(*) from jsonb_array_elements(coalesce(d->'inactivePros','[]')))<>(select count(distinct x) from jsonb_array_elements(coalesce(d->'inactivePros','[]')) x) or jsonb_array_length(coalesce(d->'inactivePros','[]'))>=jsonb_array_length(d->'names') then raise exception 'Equipe ativa inválida' using errcode='22023';end if;
+ if old_d ? 'names' and jsonb_array_length(d->'names')<jsonb_array_length(old_d->'names') then raise exception 'Inative a profissional para preservar o histórico' using errcode='22023';end if;
+ foreach col in array array['patients','appointments','records','products','expenses'] loop
+  if jsonb_typeof(d->col) is distinct from 'array' or jsonb_array_length(d->col)>5000 then raise exception 'Coleção inválida ou limite excedido' using errcode='22023';end if;
+  if exists(select 1 from jsonb_array_elements(d->col) x where jsonb_typeof(x)<>'object' or jsonb_typeof(x->'id') is distinct from 'string' or (x->>'id') !~ '^[A-Za-z0-9_-]{1,80}$') or exists(select 1 from jsonb_array_elements(d->col) x group by x->>'id' having count(*)>1) then raise exception 'Identificador inválido ou duplicado' using errcode='22023';end if;
+  if exists(select 1 from jsonb_array_elements(coalesce(old_d->col,'[]')) x where not exists(select 1 from jsonb_array_elements(d->col) y where y->>'id'=x->>'id')) then raise exception 'Use exclusão recuperável; registros anteriores não podem desaparecer' using errcode='22023';end if;
+ end loop;
+ for j in select * from jsonb_array_elements(d->'patients') loop
+  if jsonb_typeof(j->'name') is distinct from 'string' or length(trim(j->>'name')) not between 1 and 100 or length(coalesce(j->>'phone',''))>40 or length(coalesce(j->>'note',''))>500 or (j ? 'deleted' and jsonb_typeof(j->'deleted')<>'boolean') then raise exception 'Paciente inválida' using errcode='22023';end if;
+ end loop;
+ for j in select * from jsonb_array_elements(d->'appointments') loop
+  if exists(select 1 from jsonb_array_elements(coalesce(d->'inactivePros','[]')) x where x=j->'pro') and not coalesce((j->>'deleted')::boolean,false) and not exists(select 1 from jsonb_array_elements(coalesce(old_d->'appointments','[]')) x where x->>'id'=j->>'id' and x->'pro'=j->'pro' and x->'date'=j->'date' and x->'time'=j->'time' and x->'duration'=j->'duration') then raise exception 'Profissional inativa não recebe novo horário' using errcode='22023';end if;
+  if not aura_private.valid_date(j->>'date') or coalesce(j->>'time','') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' or not aura_private.valid_number(j->'duration',15,480,0) or not aura_private.valid_number(j->'pro',0,jsonb_array_length(d->'names')-1,0) or coalesce(j->>'status','') not in ('Agendado','Confirmado','Atendido','Cancelado','Faltou') or length(coalesce(j->>'procedure','')) not between 1 and 120 or not exists(select 1 from jsonb_array_elements(d->'patients') x where x->>'id'=j->>'patient') then raise exception 'Agendamento inválido' using errcode='22023';end if;
+  if extract(epoch from (j->>'time')::time)/60+(j->>'duration')::int>1440 then raise exception 'Duração ultrapassa o dia' using errcode='22023';end if;
+  if coalesce(j->>'returnOf','')<>'' and not exists(select 1 from jsonb_array_elements(d->'appointments') x where x->>'id'=j->>'returnOf' and x->>'patient'=j->>'patient' and coalesce(x->>'returnOf','')='' and x->>'id'<>j->>'id') then raise exception 'Retorno inválido' using errcode='22023';end if;
+  if not exists(select 1 from jsonb_array_elements(coalesce(old_d->'appointments','[]')) x where x->>'id'=j->>'id') and exists(select 1 from jsonb_array_elements(d->'patients') x where x->>'id'=j->>'patient' and coalesce((x->>'deleted')::boolean,false)) then raise exception 'Paciente excluída não recebe novo agendamento' using errcode='22023';end if;
+ end loop;
+ if exists(select 1 from jsonb_array_elements(d->'appointments') x join jsonb_array_elements(d->'appointments') y on x->>'id'<y->>'id' and x->>'date'=y->>'date' and x->>'pro'=y->>'pro' where not coalesce((x->>'deleted')::boolean,false) and not coalesce((y->>'deleted')::boolean,false) and x->>'status' not in ('Cancelado','Faltou') and y->>'status' not in ('Cancelado','Faltou') and extract(epoch from (x->>'time')::time)<extract(epoch from (y->>'time')::time)+(y->>'duration')::int*60 and extract(epoch from (y->>'time')::time)<extract(epoch from (x->>'time')::time)+(x->>'duration')::int*60) then raise exception 'Conflito de agendamentos' using errcode='22023';end if;
+ for j in select * from jsonb_array_elements(d->'products') loop
+  if length(coalesce(j->>'name','')) not between 1 and 100 or not aura_private.valid_number(j->'price',0,100000000,2) or not aura_private.valid_number(j->'quantity',0.001,1000000,3) or not aura_private.valid_number(coalesce(j->'packCount','1'),1,10000,0) or not aura_private.valid_number(j->'balance',0,1000000000,3) or not aura_private.valid_number(j->'owner',0,jsonb_array_length(d->'names')-1,0) or not aura_private.valid_number(j->'minimum',0,1000000000,3) or length(coalesce(j->>'unit','')) not between 1 and 30 or length(coalesce(j->>'lot',''))>100 or (coalesce(j->>'expiry','')<>'' and not aura_private.valid_date(j->>'expiry')) or jsonb_typeof(j->'movements') is distinct from 'array' or jsonb_array_length(j->'movements')>10000 then raise exception 'Produto ou insumo inválido' using errcode='22023';end if;
+  select x into prev from jsonb_array_elements(coalesce(old_d->'products','[]')) x where x->>'id'=j->>'id';
+  if prev is not null and (prev->'price'<>j->'price' or prev->'quantity'<>j->'quantity' or prev->'owner'<>j->'owner' or coalesce(prev->'packCount','1')<>coalesce(j->'packCount','1') or coalesce(prev->'lot','""')<>coalesce(j->'lot','""') or coalesce(prev->'expiry','""')<>coalesce(j->'expiry','""')) then raise exception 'Custo do lote é histórico: cadastre outro lote' using errcode='22023';end if;
+  if prev is null and coalesce(d->'inactivePros','[]') @> jsonb_build_array(j->'owner') then raise exception 'Profissional inativa não recebe novo lote' using errcode='22023';end if;
+  oldlist=coalesce(prev->'movements','[]');newlist=j->'movements';if jsonb_array_length(oldlist)>jsonb_array_length(newlist) then raise exception 'Histórico de estoque não pode ser removido' using errcode='22023';end if;
+  if jsonb_array_length(oldlist)>0 then for i in 0..jsonb_array_length(oldlist)-1 loop if oldlist->i is distinct from newlist->i then raise exception 'Histórico de estoque é imutável' using errcode='22023';end if;end loop;end if;
+  s=0;for m in select * from jsonb_array_elements(newlist) loop
+   if (coalesce(m->>'id','')) !~ '^[A-Za-z0-9_-]{1,80}$' or not aura_private.valid_number(m->'qty',-1000000,1000000,3) or (m->>'qty')::numeric=0 or not aura_private.valid_date(m->>'date') or coalesce(m->>'type','') not in ('entry','loss','consumption') or length(coalesce(m->>'reason',''))>500 then raise exception 'Movimento de estoque inválido' using errcode='22023';end if;
+   if (m->>'type'='entry' and (m->>'qty')::numeric<0) or (m->>'type' in ('loss','consumption') and (m->>'qty')::numeric>0) then raise exception 'Sinal do movimento inválido' using errcode='22023';end if;
+   if m->>'type'='consumption' and not exists(select 1 from jsonb_array_elements(d->'records') r cross join jsonb_array_elements(coalesce(r->'materials','[]')) x where r->>'id'=m->>'recordId' and x->>'mid'=m->>'materialId' and x->>'id'=j->>'id' and (x->>'qty')::numeric=-(m->>'qty')::numeric) then raise exception 'Consumo sem atendimento correspondente' using errcode='22023';end if;
+   s=s+(m->>'qty')::numeric;
+  end loop;
+  if (j->>'balance')::numeric<>(j->>'quantity')::numeric*coalesce((j->>'packCount')::numeric,1)+s then raise exception 'Saldo de estoque não confere com o histórico' using errcode='22023';end if;
+ end loop;
+ if exists(select 1 from jsonb_array_elements(d->'products') p cross join jsonb_array_elements(p->'movements') x group by x->>'id' having count(*)>1) then raise exception 'Movimento duplicado' using errcode='22023';end if;
+ for j in select * from jsonb_array_elements(d->'records') loop
+  if not aura_private.valid_date(j->>'date') or length(coalesce(j->>'procedure','')) not between 1 and 120 or not exists(select 1 from jsonb_array_elements(d->'patients') p where p->>'id'=j->>'patient') then raise exception 'Atendimento inválido' using errcode='22023';end if;
+  if not exists(select 1 from jsonb_array_elements(coalesce(old_d->'records','[]')) x where x->>'id'=j->>'id') and exists(select 1 from jsonb_array_elements(d->'patients') x where x->>'id'=j->>'patient' and coalesce((x->>'deleted')::boolean,false)) then raise exception 'Paciente excluída não recebe novo atendimento' using errcode='22023';end if;
+  foreach col in array array['price','discount','cost1','cost2','received','initialReceived','transferred'] loop if not aura_private.valid_number(j->col,0,100000000,2) then raise exception 'Valor financeiro inválido' using errcode='22023';end if;end loop;
+  if not aura_private.valid_number(j->'percent',0,100,2) or not aura_private.valid_number(j->'fee',0,100,2) or coalesce(j->>'feeOwner','') not in ('0','1','split') or not aura_private.valid_number(j->'collector',0,1,0) or not aura_private.valid_number(j->'installments',1,36,0) or not aura_private.valid_date(j->>'due') or jsonb_typeof(j->'materials') is distinct from 'array' or jsonb_typeof(j->'payments') is distinct from 'array' or jsonb_array_length(j->'materials')>100 or jsonb_array_length(j->'payments')>500 or coalesce(j->>'mode','gross') not in ('gross','reimburse') then raise exception 'Divisão ou pagamento inválido' using errcode='22023';end if;
+  p=coalesce(j->'professionalIds','[0,1]'::jsonb);
+  if jsonb_typeof(p)<>'array' or jsonb_array_length(p) not between 1 and 2 or exists(select 1 from jsonb_array_elements(p) x where not aura_private.valid_number(x,0,jsonb_array_length(d->'names')-1,0)) or (select count(distinct x) from jsonb_array_elements(p) x)<>jsonb_array_length(p) or (j->>'collector')::int>=jsonb_array_length(p) then raise exception 'Participantes inválidas' using errcode='22023';end if;
+  if jsonb_array_length(p)=1 and ((j->>'percent')::numeric<>100 or (j->>'cost2')::numeric<>0 or (j->>'transferred')::numeric<>0 or j->>'feeOwner'='1') then raise exception 'Atendimento individual sem divisão ou repasse' using errcode='22023';end if;
+  select x into prev from jsonb_array_elements(coalesce(old_d->'records','[]')) x where x->>'id'=j->>'id';
+  if prev is not null and coalesce(prev->'professionalIds','[0,1]') is distinct from p then raise exception 'Participantes históricas são imutáveis' using errcode='22023';end if;
+  if prev is null and exists(select 1 from jsonb_array_elements(p) x where coalesce(d->'inactivePros','[]') @> jsonb_build_array(x)) then raise exception 'Profissional inativa não recebe atendimento' using errcode='22023';end if;
+  if j ? 'professionalNames' and (jsonb_typeof(j->'professionalNames')<>'array' or jsonb_array_length(j->'professionalNames')<>jsonb_array_length(p) or exists(select 1 from jsonb_array_elements(j->'professionalNames') x where jsonb_typeof(x)<>'string' or length(trim(x#>>'{}')) not between 1 and 60)) then raise exception 'Nomes históricos inválidos' using errcode='22023';end if;
+  if prev is null and j ? 'professionalNames' and exists(select 1 from jsonb_array_elements(p) with ordinality x(v,n) where j->'professionalNames'->((n-1)::int) is distinct from d->'names'->((v::text)::int)) then raise exception 'Nome não corresponde à profissional' using errcode='22023';end if;
+  if prev ? 'professionalNames' and prev->'professionalNames' is distinct from j->'professionalNames' then raise exception 'Nomes históricos são imutáveis' using errcode='22023';end if;
+  t=(j->>'price')::numeric-(j->>'discount')::numeric;
+  if t<0 or (j->>'received')::numeric>t or (j->>'initialReceived')::numeric>(j->>'received')::numeric or jsonb_typeof(j->'paid') is distinct from 'boolean' or (j->>'paid')::boolean<>((j->>'received')::numeric=t) then raise exception 'Pagamento não confere com a venda' using errcode='22023';end if;
+  if jsonb_typeof(j->'schedule') is distinct from 'array' or jsonb_array_length(j->'schedule')<>(case when (j->>'received')::numeric=t then 0 else (j->>'installments')::int end) then raise exception 'Parcelamento inválido' using errcode='22023';end if;
+  s=0;i=0;for e in select * from jsonb_array_elements(j->'schedule') loop
+   if not aura_private.valid_number(e->'value',0,100000000,2) or not aura_private.valid_date(e->>'date') or (e->>'date')::date<>((j->>'due')::date+make_interval(months=>i))::date then raise exception 'Parcela inválida' using errcode='22023';end if;s=s+(e->>'value')::numeric;i=i+1;
+  end loop;if s<>t-(j->>'received')::numeric then raise exception 'Parcelas não conferem com o saldo' using errcode='22023';end if;
+  if coalesce(j->>'parent','')<>'' and not exists(select 1 from jsonb_array_elements(d->'records') r where r->>'id'=j->>'parent' and r->>'patient'=j->>'patient' and coalesce(r->>'parent','')='' and r->>'id'<>j->>'id') then raise exception 'Vínculo de retorno inválido' using errcode='22023';end if;
+  select x into prev from jsonb_array_elements(coalesce(old_d->'records','[]')) x where x->>'id'=j->>'id';
+  if prev is not null and (prev->'initialReceived' is distinct from j->'initialReceived' or prev->'materials' is distinct from j->'materials' or ((prev->>'transferred')::numeric>0 and prev->'collector'<>j->'collector')) then raise exception 'Lançamentos históricos não podem ser reatribuídos' using errcode='22023';end if;
+  oldlist=coalesce(prev->'payments','[]');newlist=j->'payments';if jsonb_array_length(oldlist)>jsonb_array_length(newlist) then raise exception 'Pagamentos não podem ser apagados' using errcode='22023';end if;
+  if jsonb_array_length(oldlist)>0 then for i in 0..jsonb_array_length(oldlist)-1 loop if oldlist->i is distinct from newlist->i then raise exception 'Pagamentos são imutáveis' using errcode='22023';end if;end loop;end if;
+  s=(j->>'initialReceived')::numeric;v=0;for e in select * from jsonb_array_elements(newlist) loop
+   if coalesce(e->>'id','') !~ '^[A-Za-z0-9_-]{1,80}$' or not aura_private.valid_number(e->'value',0.01,100000000,2) or not aura_private.valid_date(e->>'date') or coalesce(e->>'type','') not in ('recebimento','repasse') then raise exception 'Lançamento financeiro inválido' using errcode='22023';end if;
+   if e->>'type'='recebimento' then s=s+(e->>'value')::numeric;else v=v+(e->>'value')::numeric;end if;
+  end loop;
+  if s<>(j->>'received')::numeric or v<>(j->>'transferred')::numeric then raise exception 'Recebimentos ou repasses não conferem com o histórico' using errcode='22023';end if;
+  a=round((t-case when j->>'mode'='reimburse' then (j->>'cost1')::numeric+(j->>'cost2')::numeric else 0 end)*(j->>'percent')::numeric/100,2)+case when j->>'mode'='reimburse' then (j->>'cost1')::numeric else 0 end;
+  f=round(t*(j->>'fee')::numeric/100,2);
+  if j->>'collector'='0' then recipient=t-a-case when j->>'feeOwner'='1' then f when j->>'feeOwner'='split' then f-round(f*(j->>'percent')::numeric/100,2) else 0 end;
+  else recipient=a-case when j->>'feeOwner'='0' then f when j->>'feeOwner'='split' then round(f*(j->>'percent')::numeric/100,2) else 0 end;end if;
+  if v>greatest(0,recipient) then raise exception 'Repasse supera a parte contratual' using errcode='22023';end if;
+  costs=0;for m in select * from jsonb_array_elements(j->'materials') loop
+   select x into p from jsonb_array_elements(d->'products') x where x->>'id'=m->>'id';
+   if p is not null and coalesce(p->>'expiry','')<>'' and (p->>'expiry')::date<(j->>'date')::date then raise exception 'Lote vencido na data do atendimento' using errcode='22023';end if;
+   if p is null or not coalesce(j->'professionalIds','[0,1]') @> jsonb_build_array(m->'owner') or coalesce(m->>'mid','') !~ '^[A-Za-z0-9_-]{1,80}$' or not aura_private.valid_number(m->'qty',0.001,1000000,3) or not aura_private.valid_number(m->'cost',0,100000000,2) or m->'owner' is distinct from p->'owner' or (m->>'cost')::numeric<>round((p->>'price')::numeric/(p->>'quantity')::numeric*(m->>'qty')::numeric,2) then raise exception 'Custo de material não confere com o lote' using errcode='22023';end if;
+   if (select count(*) from jsonb_array_elements(p->'movements') x where x->>'type'='consumption' and x->>'recordId'=j->>'id' and x->>'materialId'=m->>'mid' and (x->>'qty')::numeric=-(m->>'qty')::numeric)<>1 then raise exception 'Baixa de material ausente ou duplicada' using errcode='22023';end if;
+  end loop;
+  for i in 0..1 loop select coalesce(sum((m->>'cost')::numeric),0) into costs from jsonb_array_elements(j->'materials') m where m->'owner'=coalesce(j->'professionalIds','[0,1]')->i;if costs>(j->>case when i=0 then 'cost1' else 'cost2' end)::numeric then raise exception 'Custo declarado menor que os materiais consumidos' using errcode='22023';end if;end loop;
+ end loop;
+ if exists(select 1 from jsonb_array_elements(d->'records') r cross join jsonb_array_elements(r->'payments') p group by p->>'id' having count(*)>1) or exists(select 1 from jsonb_array_elements(d->'records') r cross join jsonb_array_elements(r->'materials') m group by m->>'mid' having count(*)>1) then raise exception 'Lançamento duplicado' using errcode='22023';end if;
+ for j in select * from jsonb_array_elements(d->'expenses') loop if length(coalesce(j->>'name','')) not between 1 and 100 or not aura_private.valid_date(j->>'date') or not aura_private.valid_number(j->'value',0.01,100000000,2) or (coalesce(j->>'owner','')<>'shared' and not (case when coalesce(j->>'owner','') ~ '^(0|[1-9][0-9]?)$' then (j->>'owner')::int<jsonb_array_length(d->'names') else false end)) then raise exception 'Despesa inválida' using errcode='22023';end if;end loop;
+end$function$
+;
+CREATE OR REPLACE FUNCTION aura_private.rpc_core(p_action text, p_clinic uuid, p_body jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_uid uuid := auth.uid(); v_email text; v_list jsonb; v_clinic public.aura_clinics%rowtype; v_id uuid; v_owner boolean; v_data jsonb; v_revision bigint; v_member text;
+begin
+ if v_uid is null then raise exception 'Entre na sua conta Aura' using errcode='42501';end if;
+ select lower(email) into v_email from auth.users where id=v_uid and email_confirmed_at is not null and not coalesce(is_anonymous,false);
+ if v_email is null then raise exception 'Confirme seu e-mail antes de continuar' using errcode='42501';end if;
+ if p_action='create' then
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text,0));
+  if (select count(*) from public.aura_clinics where owner_id=v_uid)>=(select max_clinics from aura_private.licenses where email=v_email) then raise exception 'Limite de clínicas por conta atingido';end if;
+  v_data=jsonb_build_object('names',jsonb_build_array('Minha profissional'),'percent',100,'inactivePros','[]'::jsonb,'patients','[]'::jsonb,'appointments','[]'::jsonb,'records','[]'::jsonb,'products','[]'::jsonb,'expenses','[]'::jsonb);
+  insert into public.aura_clinics(owner_id,name,data) values(v_uid,trim(p_body->>'name'),v_data) returning id into v_id;
+  insert into public.aura_members(clinic_id,email,role) values(v_id,v_email,'manager');return jsonb_build_object('id',v_id);
+ end if;
+ select coalesce(jsonb_agg(jsonb_build_object('id',c.id,'name',c.name,'role','manager') order by c.updated_at desc),'[]'::jsonb) into v_list from public.aura_clinics c where aura_private.can_access(c.id,false);
+ if p_clinic is null or not aura_private.can_access(p_clinic,false) then
+  if p_action='get' then p_clinic=(v_list->0->>'id')::uuid;else raise exception 'Clínica não autorizada' using errcode='42501';end if;
+ end if;
+ if p_clinic is null then return jsonb_build_object('user',v_email,'clinics',v_list,'data',null);end if;
+ select * into v_clinic from public.aura_clinics where id=p_clinic for update;
+ v_owner=aura_private.can_access(p_clinic,false);
+ if p_action='get' then return jsonb_build_object('user',v_email,'clinics',v_list,'clinic',jsonb_build_object('id',v_clinic.id,'name',v_clinic.name,'role','manager'),'data',v_clinic.data,'revision',v_clinic.revision,'members',case when v_owner then (select coalesce(jsonb_agg(jsonb_build_object('email',m.email,'role',m.role)),'[]'::jsonb) from public.aura_members m where m.clinic_id=p_clinic) else '[]'::jsonb end);end if;
+ if p_action='member' then
+  if not v_owner then raise exception 'Somente a responsável gerencia acessos' using errcode='42501';end if;
+  v_member=lower(trim(p_body->>'email'));
+  if v_member is null or v_member !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' or v_member=v_email then raise exception 'Informe o e-mail da outra profissional';end if;
+  if not coalesce((p_body->>'remove')::boolean,false) and not aura_private.is_licensed(v_member) then raise exception 'A profissional precisa de autorização de uso da Aura' using errcode='42501';end if;
+  if coalesce((p_body->>'remove')::boolean,false) then delete from public.aura_members where clinic_id=p_clinic and email=v_member and role in ('owner','editor','manager');else insert into public.aura_members(clinic_id,email,role) values(p_clinic,v_member,'manager') on conflict do nothing;end if;
+  return jsonb_build_object('ok',true);
+ end if;
+ if p_action='history' then return jsonb_build_object('history',(select coalesce(jsonb_agg(x.v),'[]'::jsonb) from (select jsonb_build_object('id',h.id,'actor',h.actor,'date',h.created_at,'action',h.action,'revision',h.revision) v from public.aura_history h where h.clinic_id=p_clinic order by h.revision desc,h.created_at desc limit 50) x));end if;
+ v_revision=(p_body->>'revision')::bigint;
+ if v_revision is null or v_revision<>v_clinic.revision then raise exception 'Outra pessoa atualizou a clínica. Exporte sua cópia e recarregue.' using errcode='40001';end if;
+ if p_action='restore' then
+  if not v_owner then raise exception 'Somente a responsável restaura backups' using errcode='42501';end if;
+  select h.data into v_data from public.aura_history h where h.id=(p_body->>'backup')::uuid and h.clinic_id=p_clinic;
+  if v_data is null then raise exception 'Backup não encontrado';end if;
+ elsif p_action='save' then v_data=p_body->'data';else raise exception 'Operação inválida';end if;
+ if v_data is null or jsonb_typeof(v_data)<>'object' or jsonb_typeof(v_data->'patients') is distinct from 'array' or jsonb_typeof(v_data->'records') is distinct from 'array' or jsonb_typeof(v_data->'appointments') is distinct from 'array' or jsonb_typeof(v_data->'names') is distinct from 'array' or jsonb_array_length(v_data->'names') not between 1 and 20 or octet_length(v_data::text)>3000000 then raise exception 'Dados inválidos ou limite de tamanho excedido';end if;
+ insert into public.aura_history(clinic_id,actor,action,data,revision) values(p_clinic,v_email,case when p_action='restore' then 'Restauração de backup' else left(coalesce(p_body->>'label','Atualização de registros'),120) end,v_clinic.data,v_clinic.revision);
+ update public.aura_clinics set data=v_data,revision=revision+1,updated_at=now() where id=p_clinic;
+ return jsonb_build_object('revision',v_clinic.revision+1);
+end;
+$function$
+;

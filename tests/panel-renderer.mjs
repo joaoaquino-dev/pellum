@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createPanelRenderer} from '../standalone/src/panel-renderer.js';
+const container={};let creates=0,calls=0;const roots=[],pending=[];
+const show=createPanelRenderer({getContainer:()=>container,createRoot:parent=>{const root={isConnected:true,parentElement:parent,value:null};roots.push(root);creates++;return root},render:async(root,isCurrent)=>{const id=++calls;await new Promise(resolve=>pending.push(resolve));if(isCurrent())root.value=id}});
+const first=show(),duplicate=show();
+assert.equal(first,duplicate,'Concurrent entries must share one request');
+await Promise.resolve();assert.equal(calls,1);assert.equal(creates,1);
+pending.shift()();await first;assert.equal(roots[0].value,1);
+const refresh=show();await Promise.resolve();assert.equal(creates,1,'Refresh must reuse the panel root');
+roots[0].isConnected=false;
+const latest=show();await Promise.resolve();assert.equal(calls,3);assert.equal(creates,2);
+pending.shift()();await refresh;assert.equal(roots[0].value,1,'Stale response must not render after navigation');
+pending.shift()();await latest;assert.equal(roots[1].value,3);
+const detached=show();await Promise.resolve();roots[1].isConnected=false;pending.shift()();await detached;
+assert.equal(roots[1].value,3,'Leaving admin must discard an in-flight response');
+console.log('PASS: concurrent admin calls coalesced; one root per view; refresh reuses root; stale and detached renders discarded.');

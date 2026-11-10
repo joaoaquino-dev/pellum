@@ -43,3 +43,9 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+# Independent frontend
+/standalone/node_modules/
+/standalone/dist/
+/supabase/.temp/
+/supabase/.branches/

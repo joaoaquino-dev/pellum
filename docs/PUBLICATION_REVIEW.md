@@ -1,41 +1,56 @@
-# Revisão para publicação do repositório
+# Preparação para publicação — relatório
 
-Data: 09/11/2026. Escopo: preparar a apresentação de portfólio e avaliar exposição do repositório privado antes de eventual mudança de visibilidade.
+Referência: 09/11/2026, America/Sao_Paulo. Repositório permanece privado.
 
-## Verificações executadas
+## Alterações preparadas
 
-- Inventário das sete branches retornadas pela API.
-- Histórico alcançável dessas branches: 38 commits únicos, com paginação de até 100 por branch; nenhuma lista atingiu o limite.
-- Árvores dos 38 commits consultadas sem truncamento.
-- 338 blobs únicos identificados; 333 versões de arquivos de texto lidas. Cinco blobs binários não tiveram o conteúdo inspecionado nesta etapa.
-- Busca por padrões conhecidos de chaves privadas, tokens GitHub, AWS, segredos Supabase/Brevo, URLs de banco com senha, atribuições literais de credenciais e JWTs.
-- Nenhuma correspondência nesses padrões nos textos examinados.
-- Busca de candidatos a CPF com validação de dígitos: nenhuma correspondência nos textos examinados.
-- Revisão dos corpos dos quatro pull requests listados.
-- Inspeção das fixtures de navegador: registros descritos como fictícios.
-- Configuração Supabase observada contém URL e chave publicável; não é uma credencial privilegiada. Não foi copiada para esta documentação.
+- PR de alinhamento da main à versão Supabase/Vercel de fix/whatsapp-contact, preservando ambas as histórias.
+- PR documental e de ferramentas: README, estudo de caso, licença de direitos reservados escolhida pelo proprietário, comando de testes e mapa do projeto.
+- CONTRIBUTING e SECURITY preservados e ajustados. Notas internas identificadas; nenhum arquivo histórico ou branch removido.
+- Participação do autor e apoio de IA explicitados.
 
-## Identificadores encontrados
+## Exposição e histórico
 
-Há contatos de suporte/autoria, telefone de contato intencional na landing, referências operacionais de serviços e dados de teste. Não foram removidos por serem usados no produto ou no histórico técnico. Antes de publicar, o proprietário deve estar ciente de que esses arquivos e mensagens de commit se tornam consultáveis.
+Foram lidas 15 refs (sete branches e oito refs de PR), 43 commits alcançáveis, 43 árvores sem truncamento e 336 versões únicas de arquivos de texto em 341 blobs. Nenhuma tag estava presente na listagem completa de refs. Foram revisados quatro PRs/issues e três comentários, sem revisões inline retornadas e sem anexos identificados nesses corpos. Actions e releases retornaram zero itens.
 
-IDs públicos de projeto e chaves publicáveis não substituem autorização no servidor. Tornar o código público não valida as políticas de acesso.
+A busca incluiu formatos conhecidos de chaves privadas, tokens GitHub/AWS/Supabase/Brevo, URLs de banco com senha, literais de credencial e JWTs. Nenhuma correspondência foi encontrada. Foram examinadas fixtures de navegador com registros fictícios. Contatos de autoria/suporte, telefones intencionais do produto e identificadores operacionais foram identificados sem reproduzir valores neste relatório. E-mails de autoria permanecem nos commits.
 
-## Limites importantes
+Nenhum arquivo .env foi identificado nas árvores consultadas. O .gitignore contém .env*, incluindo variantes aninhadas. Configuração de cliente contém URL Supabase e chave publishable: são identificadores públicos de cliente, não credenciais privilegiadas. Service role, segredo SMTP e senha do banco não devem estar no cliente ou no Git.
 
-Esta revisão usa leitura pela API e regras de busca específicas, não uma certificação ou prova de ausência de segredos. Não inspecionou conteúdo binário, comentários e revisões de PR, anexos, Discussions, Actions/artifacts, refs de PR, commits inalcançáveis, clones externos ou arquivos locais fora do GitHub.
+Consulta somente de catálogo confirmou RLS ativo nas oito tabelas de negócio/administração: public.aura_clinics, public.aura_history, public.aura_members e as cinco tabelas aura_private. Isso não substitui teste funcional de cada política.
 
-A listagem de tags pela rota disponível foi rejeitada pelo conector e não foi validada. Não houve varredura dos serviços Supabase/Brevo/Vercel nem de seus dados.
+## Validação executada nesta preparação
 
-Desenvolvimento clínico local posterior precisa de uma nova revisão caso seja enviado ao repositório.
+Linux, Node 24.22.1:
 
-## Antes de mudar a visibilidade
+| Verificação | Resultado |
+| --- | --- |
+| npm ci --prefix standalone --workspaces=false --ignore-scripts | PASS, 11 pacotes instalados |
+| npm --prefix standalone run build | PASS |
+| tests/*.mjs | 11 PASS, zero falhas |
+| npm --prefix standalone run check | PASS |
+| node security/assert-deployment.mjs | PASS: saída estática sem servidor legado, env, source maps ou dependências |
+| Capturas por Chromium/Playwright | BLOQUEADO: navegador encerra na inicialização deste ambiente |
 
-- Conferir comentários, anexos e demais superfícies não cobertas acima.
-- Confirmar que contatos e autoria de commits podem ficar públicos.
-- Definir a política de uso do código: não foi adicionada licença de código aberto.
-- Planejar a consolidação da branch padrão: main ainda contém o piloto, e os links do portfólio apontam à versão independente.
-- Se algum segredo real for identificado, revogá-lo e tratar o histórico; removê-lo apenas do último commit não resolve a exposição.
-- Fazer a mudança de visibilidade como uma ação explícita e separada, após a revisão.
+O runner adicionado permite repetir os testes sem executar SQL. Resultados de SQL, SMTP, login remoto ou Safari não foram alegados como testes atuais.
 
-Nenhum dado, branch, commit histórico ou configuração de produção foi removido ou reescrito nesta preparação. A visibilidade permanece privada.
+## Limites e bloqueios
+
+- Esta varredura não certifica ausência de segredos; formatos desconhecidos e conteúdo binário de imagens não foram inspecionados semanticamente. Os arquivos binários existentes são ícones e arte de marca por caminho, sem nova captura clínica usada nesta etapa.
+- Arquivos locais fora do GitHub, commits inalcançáveis, clones externos e superfícies não listadas pelo conector não são verificáveis nesta sessão.
+- Capturas reais novas com dados fictícios continuam pendentes pelo bloqueio do navegador. Não foram inventadas telas.
+- Build e testes locais foram executados na árvore candidata; enquanto o PR principal não for mesclado, não constituem teste de uma main já atualizada.
+- A main dispara deploy automático de produção. Merge requer ciência do proprietário sobre esse efeito; não houve mudança manual em configuração de Vercel, Auth, banco ou permissões.
+- Uma remoção ampla da infraestrutura histórica e encerramento de PRs antigos foram adiados; nada foi apagado sem aviso.
+
+## Checklist para tornar público manualmente
+
+- [ ] PRs preparados integrados e SHA final da main conferido.
+- [ ] Build e testes repetidos após merge no SHA final.
+- [ ] Capturas reais adicionadas quando houver navegador funcional.
+- [ ] Contatos e autoria de commits aceitos como exposição pública pelo proprietário.
+- [ ] Licença e relatório revisados pelo proprietário.
+- [ ] Conferência final de comentários/anexos e novas refs criados após esta revisão.
+- [ ] Alterar visibilidade manualmente somente após confirmação do proprietário.
+
+Nenhuma alteração de visibilidade é autorizada por este relatório.
