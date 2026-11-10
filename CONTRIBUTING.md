@@ -2,7 +2,7 @@
 
 ## Escolha a base certa
 
-Leia o [mapa do repositório](docs/REPOSITORY_GUIDE.md) e o AGENTS.md existente na branch de trabalho. A main ainda contém o piloto histórico; não a utilize como base de uma correção da aplicação independente sem conferir o código e o SHA de origem.
+Leia o [mapa do repositório](docs/REPOSITORY_GUIDE.md) e o AGENTS.md existente na branch de trabalho. A main contém a aplicação independente; confira a versão e o escopo antes de alterar código.
 
 Preserve alterações locais e crie uma branch específica a partir da base correta. Trabalhos clínicos locais posteriores precisam ser identificados antes de qualquer consolidação.
 
@@ -25,7 +25,7 @@ Alterações remotas de banco, autenticação, permissões, infraestrutura e pro
 
 ## Pull requests e commits
 
-Informe o problema, comportamento resultante, arquivos relevantes, evidências e limitações. Confirme a branch de destino antes de abrir o PR; não escolha main automaticamente.
+Informe o problema, comportamento resultante, arquivos relevantes, evidências e limitações. Confirme a branch de destino antes de abrir o PR; não escolha main sem conferir o escopo.
 
 Use commits descritivos, por exemplo:
 

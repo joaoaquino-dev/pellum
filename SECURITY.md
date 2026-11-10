@@ -10,7 +10,7 @@ Não publique detalhes exploráveis em issues ou pull requests. Não acesse regi
 
 ## Referência técnica
 
-A main contém código histórico. Confira o [mapa das versões](docs/REPOSITORY_GUIDE.md) para identificar a base afetada. Não presumir que um commit disponível no GitHub está publicado.
+A main contém a aplicação independente; a infraestrutura histórica restante está identificada em docs/LEGACY.md. Confira o [mapa das versões](docs/REPOSITORY_GUIDE.md) para identificar a base afetada. Não presumir que um commit disponível no GitHub está publicado.
 
 A documentação de auditoria registra controles e limitações em um momento específico; não garante ausência de vulnerabilidades. Histórico interno de snapshots não substitui backup externo validado.
 
