@@ -5,20 +5,20 @@ window.AURA_CONNECT=function(options){
  const model=service.model;
  const dialog=document.createElement('dialog');dialog.id='clinicalDialog';dialog.className='clinical-dialog';
  dialog.setAttribute('aria-labelledby','clinicalTitle');document.body.append(dialog);
- let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null,mediaView=null,followupView=null;
+ let patientId=null,entries=[],summaryEntries=[],templates=[],access=null,epoch=0,dirty=false,busy=false,timer=null,activeWriter=null,mediaView=null,followupView=null,searchView=null;
  const find=s=>dialog.querySelector(s);
  const button=(label,fn,secondary=true)=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(secondary)b.className='secondary';b.onclick=fn;return b};
  const info=text=>{const el=find('#clinicalMessage');if(el)el.textContent=text};
  const safeClose=()=>{
   if(busy||activeWriter?.state.pending||mediaView?.pending)return info('Aguarde o salvamento antes de fechar.');
   if(dirty&&!confirm('Há um rascunho não salvo nesta tela. Fechar e descartar essas alterações?'))return;
-  mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
+  mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;searchView?.dispose();searchView=null;clearTimeout(timer);epoch++;dirty=false;activeWriter=null;entries=[];templates=[];patientId=null;dialog.close();dialog.replaceChildren();
  };
  dialog.addEventListener('cancel',e=>{e.preventDefault();safeClose()});
  window.addEventListener('pellum:session-ended',()=>{
   // Logout/expiry must clear already displayed clinical data even if a user
   // cancels a navigation prompt from another part of the legacy application.
-  epoch++;clearTimeout(timer);mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;dirty=false;busy=false;activeWriter=null;
+  epoch++;clearTimeout(timer);mediaView?.dispose();mediaView=null;followupView?.dispose();followupView=null;searchView?.dispose();searchView=null;dirty=false;busy=false;activeWriter=null;
   entries=[];summaryEntries=[];templates=[];access=null;patientId=null;service.actorId=null;
   if(dialog.open)dialog.close();dialog.replaceChildren();
  });
@@ -62,16 +62,15 @@ window.AURA_CONNECT=function(options){
   const alerts=model.criticalAlerts(summaryEntries);
   summary.innerHTML=`<h3>Resumo clínico</h3><p>${chart?'Número interno: '+esc(chart.chart_number):'O número interno será criado ao salvar o primeiro registro.'}${age===null?'':' · '+age+' anos'}</p>${alerts.length?`<div class="clinical-alert"><b>Informações declaradas para revisão profissional</b><ul>${alerts.map(a=>`<li>${esc(a)}</li>`).join('')}</ul><small>Alertas auxiliam a revisão. Não são diagnóstico nem autorização para realizar procedimentos.</small></div>`:'<p>Nenhum alerta declarado na última anamnese revisada. Reavalie as informações antes de cada procedimento relevante.</p>'}<small>Assinaturas eletrônicas continuam aguardando configuração e validação externa.</small>`;
   body.append(summary,toolbar());
-  const filters=document.createElement('div');filters.className='toolbar';filters.innerHTML=`<label class="field">Pesquisar nesta página<input id="clinicalSearch" type="search" placeholder="Texto do registro" autocomplete="off"></label><label class="field">Seção<select id="clinicalKind"><option value="">Todas</option>${Object.entries(model.clinicalKinds).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></label>`;body.append(filters);
+  const filters=document.createElement('form');filters.className='toolbar';filters.innerHTML=`<label class="field">Pesquisar no prontuário<input id="clinicalSearch" type="search" maxlength="200" placeholder="Texto do registro" autocomplete="off"></label><label class="field">Tipo de registro<select id="clinicalKind"><option value="">Todos</option>${Object.entries(model.clinicalKinds).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select></label><button type="submit">Pesquisar</button>`;filters.onsubmit=event=>{event.preventDefault();showSearch({query:find('#clinicalSearch').value,kind:find('#clinicalKind').value})};body.append(filters);
   const list=document.createElement('section');list.className='clinical-timeline';list.setAttribute('aria-label','Histórico clínico');body.append(list);
   const draw=()=>{
-   const search=find('#clinicalSearch').value.trim().toLocaleLowerCase('pt-BR'),kind=find('#clinicalKind').value;
    list.replaceChildren();
-   const filtered=entries.filter(e=>(!kind||e.kind===kind)&&(!search||JSON.stringify(e.payload).toLocaleLowerCase('pt-BR').includes(search)));
+   const filtered=entries;
    for(const e of filtered){const card=entryCard(e);const actions=document.createElement('div');actions.className='toolbar';actions.append(button('Versões',()=>history(e)));if(access?.can_write&&e.authorId===service.actorId){actions.append(button(e.finalized?'Adicionar adendo':'Continuar rascunho',()=>edit(e.kind,e)));if(e.finalized){const request={id:crypto.randomUUID(),entryId:e.id,version:e.version,kind:e.kind==='consent'?({'Procedimento':'procedure_consent','Fotografia para cuidado':'clinical_photo_consent','Uso externo de imagem':'advertising_consent'}[e.payload.purpose]):'professional_record'};actions.append(button('Preparar documento · sem assinatura',async()=>{if(busy)return;busy=true;try{await service.documentCall('prepare',patientId,request);info('Fonte versionada preparada. Nenhum documento foi enviado ou assinado. Consulte Documentos preparados.')}catch(error){info(error.message)}finally{busy=false}}))}}if(access?.can_write&&e.kind==='procedure'&&e.finalized&&e.authorId===service.actorId&&!e.payload.financialRecordId&&e.payload.materialsOrigin!=='clinical_stock')actions.append(button('Adicionar materiais',()=>consumeMaterials(e)));card.append(actions);list.append(card)}
    if(!filtered.length){const p=document.createElement('p');p.className='empty';p.textContent=entries.length?'Nenhum registro corresponde à busca.':'Comece com a identificação ou uma nova anamnese.';list.append(p)}
   };
-  find('#clinicalSearch').oninput=draw;find('#clinicalKind').onchange=draw;draw();
+  draw();
   if(entries.length&&entries.length%100===0)body.append(button('Carregar registros anteriores',async()=>{
    const last=entries.at(-1);try{const next=await service.call('list',patientId,{before:last.createdAt,beforeId:last.id});entries.push(...next.filter(e=>!entries.some(x=>x.id===e.id)));timeline(chart)}catch(e){info(e.message)}
   }));
@@ -158,8 +157,22 @@ window.AURA_CONNECT=function(options){
    info('Nenhuma assinatura é gerada por um checkbox ou por preparar a fonte.');
   }catch(error){if(token===epoch)info(error.message)}
  }
- async function history(e){
-  try{const versions=await service.call('history',patientId,{id:e.id});const body=find('#clinicalBody');body.replaceChildren(button('Voltar ao prontuário',reload));for(const v of versions)body.append(entryCard({kind:e.kind,version:v.version,status:v.status,occurredAt:v.occurred_at,recordedAt:v.recorded_at,professionalName:v.professional_name,registry:v.registry,reason:v.correction_reason,payload:v.payload}));info('Versões preservadas. Nenhuma versão anterior é sobrescrita.')}catch(e){info(e.message)}
+ function showSearch(initial={}){
+  if(busy||dirty)return;clearTimeout(timer);activeWriter=null;searchView?.dispose();const token=++epoch,panel=document.createElement('section');find('#clinicalBody').replaceChildren(panel);info('');
+  const resume=()=>{if(token===epoch&&dialog.open){find('#clinicalBody').replaceChildren(panel);info('')}};
+  const leave=()=>{searchView?.dispose();searchView=null;epoch++;reload()};
+  searchView=service.mountClinicalSearch({container:panel,service,patient:patientId,initial,onBack:leave,onBusy:value=>{if(token===epoch)busy=value},onHistory:entry=>history(entry,resume),onOpenRecord:async item=>{
+   const response=await service.searchCall(patientId,{entryId:item.id,...(item.historical?{version:item.version}:{})});if(token!==epoch||!dialog.open)return;
+   const entry=response.items[0];if(!entry)throw Error('Registro indisponível. Atualize a pesquisa.');
+   const card=entryCard(entry),actions=document.createElement('div');actions.className='toolbar';actions.append(button('Ver versões',async()=>{if(busy)return;busy=true;try{await history(entry,resume)}finally{if(token===epoch)busy=false}}));
+   if(entry.historical)card.prepend(Object.assign(document.createElement('p'),{textContent:'Versão anterior · consulte as versões para ver o registro atual.'}));
+   else if(access?.can_write&&entry.authorId===service.actorId)actions.append(button(entry.finalized?'Adicionar adendo':'Continuar rascunho',()=>{if(busy)return;searchView?.dispose();searchView=null;edit(entry.kind,entry)}));
+   card.append(actions);find('#clinicalBody').replaceChildren(button('Voltar à pesquisa',resume),card);
+  }});
+ }
+ async function history(e,onBack=null){
+  const token=epoch;
+  try{const versions=await service.call('history',patientId,{id:e.id});if(token!==epoch||!dialog.open)return;const body=find('#clinicalBody');body.replaceChildren(button(onBack?'Voltar à pesquisa':'Voltar ao prontuário',onBack||reload));for(const v of versions)body.append(entryCard({kind:e.kind,version:v.version,status:v.status,occurredAt:v.occurred_at,recordedAt:v.recorded_at,professionalName:v.professional_name,registry:v.registry,reason:v.correction_reason,payload:v.payload}));info('Versões preservadas. Nenhuma versão anterior é sobrescrita.')}catch(e){if(token===epoch)info(e.message)}
  }
  function edit(kind,entry=null){
   clearTimeout(timer);const token=++epoch;dirty=false;const payload=structuredClone(entry?.payload||{}),questions=payload.questions||structuredClone(model.defaultQuestions);

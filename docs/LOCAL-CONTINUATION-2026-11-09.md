@@ -65,3 +65,5 @@ Orientação posterior e entrega: CLINICAL-CHART-2026-11-10.md prioriza ficha te
 CLINICAL-FORM-TEMPLATES-2026-11-10.md registra o editor posterior de modelos reutilizáveis/versionados de procedimentos e minutas, com schema capturado no atendimento, escopos e exportação. Resolve a pendência de editor citada no relatório anterior, sem habilitar assinaturas ou fotos.
 
 CLINICAL-FOLLOWUPS-2026-11-10.md registra previsões a partir da evolução, listas de retornos, agendamento na agenda existente, conclusão/reabertura e auditoria. Sem mensagens automáticas ou serviços novos; validação local, ainda não publicada.
+
+CLINICAL-SEARCH-2026-11-10.md registra a pesquisa no histórico completo da paciente, com texto, tipo, período de atendimento e versões anteriores opcionais. Substitui a busca restrita à página, preserva permissões clínicas e não usa serviço externo. Validação local, ainda não publicada.

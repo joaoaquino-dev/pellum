@@ -51,3 +51,11 @@
 .clinical-followup-timegrid input{min-width:0;width:100%}
 #clinicalMessage:empty{display:none}
 @media(max-width:360px){.clinical-followup-timegrid{grid-template-columns:minmax(0,1fr)}}
+.clinical-search-period{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.clinical-search-period input{min-width:0;max-width:100%}
+#clinicalHistorySearch input,#clinicalHistorySearch select,#clinicalHistorySearch button{min-height:44px;font-size:16px}
+#clinicalHistorySearch input[type=checkbox]{min-height:0;width:20px;height:20px}
+.clinical-search-card{margin:12px 0}
+.clinical-search-card h4{margin:0 0 8px;color:var(--green);font:600 18px Georgia,serif}
+.clinical-search-summary{white-space:pre-wrap;overflow-wrap:anywhere;max-height:4.5em;overflow:hidden;line-height:1.5}
+@media(max-width:360px){.clinical-search-period{grid-template-columns:minmax(0,1fr)}}
