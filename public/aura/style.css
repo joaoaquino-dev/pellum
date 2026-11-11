@@ -415,15 +415,20 @@ button, .button {
 }
 
 @media (hover: hover) {
-  button:not(:disabled):hover, .button:hover {
+  /* Botão primário: apenas quando não possui classes variantes */
+  button:not(.secondary, .textbtn, .danger, .calendar-day):not(:disabled):hover,
+  .button:not(.secondary, .textbtn, .danger, .calendar-day):hover {
     background: var(--green-hover);
+    color: #fff;
     box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
   }
 }
 
-button:active, .button:active {
+button:not(.secondary, .textbtn, .danger, .calendar-day):active,
+.button:not(.secondary, .textbtn, .danger, .calendar-day):active {
   background: var(--green-active);
+  color: #fff;
   transform: translateY(0);
 }
 
@@ -433,7 +438,10 @@ button:disabled {
   transform: none !important;
 }
 
-.secondary {
+/* Botão secundário */
+.secondary,
+button.secondary,
+a.button.secondary {
   background: var(--surface);
   color: var(--green);
   border: 1px solid var(--line);
@@ -441,14 +449,28 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .secondary:hover {
+  .secondary:not(:disabled):hover,
+  button.secondary:not(:disabled):hover,
+  a.button.secondary:hover {
     background: var(--surface-alt);
     border-color: var(--line-strong);
     color: var(--green-hover);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
 }
 
-.textbtn {
+.secondary:active,
+button.secondary:active,
+a.button.secondary:active {
+  background: var(--light);
+  transform: translateY(0);
+}
+
+/* Botão de texto */
+.textbtn,
+button.textbtn,
+a.textbtn {
   background: transparent;
   color: var(--green);
   border: 0;
@@ -461,23 +483,51 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .textbtn:hover {
+  .textbtn:not(:disabled):hover,
+  button.textbtn:not(:disabled):hover,
+  a.textbtn:hover {
     background: var(--light);
     color: var(--green-hover);
+    box-shadow: none;
+    transform: none;
   }
 }
 
-.danger {
+.textbtn:active,
+button.textbtn:active,
+a.textbtn:active {
+  background: var(--light-hover);
+  color: var(--green-active);
+  transform: none;
+}
+
+/* Botão de perigo */
+.danger,
+button.danger,
+a.button.danger {
+  background: var(--surface);
   color: var(--danger);
-  border-color: var(--danger-border);
+  border: 1px solid var(--danger-border);
+  box-shadow: var(--shadow-xs);
 }
 
 @media (hover: hover) {
-  .danger:hover {
+  .danger:not(:disabled):hover,
+  button.danger:not(:disabled):hover,
+  a.button.danger:hover {
     background: var(--danger-bg);
     border-color: var(--danger);
     color: var(--danger);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
+}
+
+.danger:active,
+button.danger:active,
+a.button.danger:active {
+  background: #fae2df;
+  transform: translateY(0);
 }
 
 .actions {
@@ -1123,9 +1173,11 @@ body:has(dialog[open]) {
   transition: var(--transition-fast);
 }
 
-.calendar-day:hover {
+.calendar-day:hover,
+button.calendar-day:hover {
   background: var(--surface-alt);
   border-color: var(--line-strong);
+  transform: none;
 }
 
 .calendar-day.today {
