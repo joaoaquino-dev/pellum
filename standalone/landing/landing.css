@@ -17,6 +17,7 @@
   --line-strong: #c8d3c2;
   --muted: #5f7167;
   --surface: #ffffff;
+  --light: #eaf0e9;
   --bg: #fbfcf8;
   --shadow-sm: 0 4px 14px rgba(40, 61, 54, 0.06);
   --shadow-md: 0 10px 30px rgba(40, 61, 54, 0.09);
@@ -930,6 +931,13 @@ footer p {
   font-weight: 500;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 -4px 20px rgba(40, 61, 54, 0.15);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.mobile-cta.is-hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .icon {

@@ -1500,6 +1500,37 @@ button.calendar-day:hover {
   font-size: 12px;
 }
 
+.auth-activation {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--gold-subtle);
+  border: 1px solid var(--gold-border);
+  border-radius: 10px;
+}
+
+.auth-activation-title {
+  display: block;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.auth-activation p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.auth-activation .button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+}
+
 .access-shell {
   min-height: 75svh;
   padding: 32px 4px;
@@ -1547,7 +1578,7 @@ button.calendar-day:hover {
   display: none;
 }
 
-.access-primary > button {
+.access-primary > button, .access-primary > a.button {
   width: 100%;
   min-height: 48px;
   margin: 0;
