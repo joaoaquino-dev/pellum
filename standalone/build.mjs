@@ -23,7 +23,7 @@ console.log('Pellum independente gerada em standalone/dist · '+config.mode);
 
 await mkdir('dist/conheca',{recursive:true});
 for(const f of ['index.html','landing.css','landing.js']){
- if(f==='index.html')await writeFile('dist/conheca/'+f,(await readFile('landing/'+f,'utf8')).replaceAll('https://usepellum.vercel.app',config.publicOrigin));
+ if(f==='index.html')await writeFile('dist/conheca/'+f,(await readFile('landing/'+f,'utf8')).replaceAll('https://usepellum.vercel.app',config.publicOrigin).replaceAll('https://usepellum.netlify.app',config.publicOrigin));
  else await copyFile('landing/'+f,'dist/conheca/'+f);
 }
 
