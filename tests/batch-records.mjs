@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
  allocateReceivedCents,
+ buildAppointmentWhatsappURL,
  buildBatchCommit,
+ canDeleteRecord,
  groupRecordsByDate,
  joinAppointmentProcedures,
  reservedProductQty,
@@ -149,4 +151,32 @@ assert.equal(grouped[0].date, '2026-11-24');
 assert.equal(grouped[0].items.length, 2);
 assert.equal(grouped[1].date, '2026-11-20');
 
-console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, and patient history grouping.');
+// 7. Agenda WhatsApp confirmation URL
+assert.equal(buildAppointmentWhatsappURL({ whatsappBaseUrl: null, patientName: 'Marina Costa', date: '2026-11-24', time: '14:30', procedure: 'Toxina' }), null);
+const waUrl = buildAppointmentWhatsappURL({
+ whatsappBaseUrl: 'https://wa.me/5561999998888',
+ patientName: 'Marina Costa',
+ date: '2026-11-24',
+ time: '14:30',
+ procedure: 'Toxina botulínica + Skinbooster'
+});
+assert.ok(waUrl.startsWith('https://wa.me/5561999998888?text='));
+const decoded = decodeURIComponent(waUrl.split('?text=')[1]);
+assert.match(decoded, /Olá, Marina!/);
+assert.match(decoded, /Toxina botulínica \+ Skinbooster/);
+assert.match(decoded, /24\/11\/2026/);
+assert.match(decoded, /14:30/);
+
+// 8. Financial record deletion guard
+const parentRec = { id: 'r1', procedure: 'Toxina', materials: [{ id: 'prod1', qty: 10 }], received: 200 };
+const activeChild = { id: 'r2', parent: 'r1', procedure: 'Retorno' };
+const deletedChild = { id: 'r2', parent: 'r1', procedure: 'Retorno', deleted: true };
+assert.equal(canDeleteRecord(parentRec, [parentRec, activeChild]).ok, false);
+const delAllowed = canDeleteRecord(parentRec, [parentRec, deletedChild]);
+assert.equal(delAllowed.ok, true);
+assert.equal(delAllowed.hasMaterials, true);
+assert.equal(delAllowed.hasPayments, true);
+assert.equal(canDeleteRecord({ ...parentRec, deleted: true }, []).ok, false);
+
+console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, WhatsApp confirmation URL, record deletion guards, and patient history grouping.');
+

@@ -3,22 +3,83 @@ window.AURA_CONNECT = function(options) {
  connectBeforeBatch(options);
  const batch = window.AURA_BATCH_RECORDS;
  const consumption = window.AURA_CALC_CONSUMPTION;
+ const phone = window.AURA_PHONE;
  if (!batch) return;
 
  let batchItems = [];
  let preselectedPatientId = null;
+ let appointmentContext = null;
+ let showDeletedRecords = false;
+
  window.addEventListener('pellum:session-ended', () => {
   batchItems = [];
   preselectedPatientId = null;
+  appointmentContext = null;
+  showDeletedRecords = false;
  });
 
+ const whatsappSvg = '<svg class="ui-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.8 7.4L3 21l1.8-5.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 7c0 5 4 8 8 9l1-3-3-1-1 1-3-3 1-1-1-2Z"/></svg>';
+ const syncReady = (msg = 'Aguarde o salvamento antes de continuar.') => {
+  const s = window.AURA_CLINIC_SYNC?.();
+  if (s && (s.pending || s.blocked)) {
+   toast(msg);
+   return false;
+  }
+  return true;
+ };
  const formatDateBr = iso => (iso ? String(iso).split('-').reverse().join('/') : '');
- const activePreselectedPatient = () => (
-  preselectedPatientId ? state.patients.find(p => p.id === preselectedPatientId && !p.deleted) || null : null
- );
+ const activePreselectedPatient = () => {
+  const id = appointmentContext?.patientId || preselectedPatientId;
+  return id ? state.patients.find(p => p.id === id && !p.deleted) || null : null;
+ };
  const currentFormHasDraft = () => (
   Number($('#price')?.value || 0) > 0 || (consumption?.get?.().length || 0) > 0
  );
+ const markLinkedAppointmentAttended = () => {
+  if (!appointmentContext?.id) return;
+  const app = state.appointments.find(x => x.id === appointmentContext.id);
+  if (app && !app.deleted && ['Agendado', 'Confirmado'].includes(app.status) && !appointmentConflict(app)) {
+   app.status = 'Atendido';
+  }
+ };
+
+ // Ensure excluded records never inflate dashboard stats, 6-month chart, or CSV exports.
+ monthRecords = () => state.records.filter(r => !r.deleted && r.date.slice(0, 7) === today().slice(0, 7));
+ const baseChart = chart;
+ chart = function() {
+  const all = state.records;
+  state.records = all.filter(r => !r.deleted);
+  try {
+   return baseChart();
+  } finally {
+   state.records = all;
+  }
+ };
+ const baseExportCSV = exportCSV;
+ exportCSV = function() {
+  const all = state.records;
+  state.records = all.filter(r => !r.deleted);
+  try {
+   return baseExportCSV();
+  } finally {
+   state.records = all;
+  }
+ };
+
+ const baseReceivePayment = window.receivePayment;
+ window.receivePayment = id => {
+  if (state.records.find(r => r.id === id)?.deleted) {
+   return toast('Restaure o atendimento antes de registrar recebimento.');
+  }
+  return baseReceivePayment(id);
+ };
+ const baseTransferPayment = window.transferPayment;
+ window.transferPayment = id => {
+  if (state.records.find(r => r.id === id)?.deleted) {
+   return toast('Restaure o atendimento antes de registrar repasse.');
+  }
+  return baseTransferPayment(id);
+ };
 
  const baseAddConsumption = window.addConsumption;
  window.addConsumption = () => {
@@ -73,16 +134,18 @@ window.AURA_CONNECT = function(options) {
    const modeLabel = names.length === 1 ? names[0] : `${names[0]} / ${names[1]} (${item.percent}%)`;
    return `<div class="row"><div><b>${esc(item.procedure)}</b><small>${esc(modeLabel)}</small></div><b>${money(calc(item).total)}</b></div>`;
   }).join('');
+  const defaultDate = appointmentContext?.date || today();
+  const defaultDue = appointmentContext?.date && appointmentContext.date >= today() ? appointmentContext.date : today();
 
   showModal(`<h2>Registrar atendimento (${items.length} procedimentos)</h2>
    <div class="batch-modal-summary">${summaryRows}<div class="row batch-modal-total"><span>Total dos procedimentos</span><b>${money(totalAmount)}</b></div></div>
    <form id="batchRecordForm">
     <label class="field">Paciente<select name="patient" required>${patientOptions()}</select></label>
-    <label class="field">Data<input name="date" type="date" value="${today()}" required></label>
+    <label class="field">Data<input name="date" type="date" value="${esc(defaultDate)}" required></label>
     <label class="field" ${participantIds.length <= 1 ? 'hidden' : ''}>Quem recebeu / receberá da paciente?<select name="collector">${collectorOptions}</select></label>
     <label class="field">Já recebido (sinal ou pagamento) R$<input name="received" type="number" value="0" min="0" max="${totalAmount.toFixed(2)}" step="0.01" required></label>
     <label class="field">Quantidade de parcelas do saldo<input name="installments" type="number" value="1" min="1" max="36" step="1" required></label>
-    <label class="field">Primeiro vencimento do saldo<input name="due" type="date" value="${today()}" required></label>
+    <label class="field">Primeiro vencimento do saldo<input name="due" type="date" value="${esc(defaultDue)}" required></label>
     <label class="field">Retorno de um atendimento anterior<select name="parent"><option value="">Atendimento principal</option>${state.records.filter(x => !x.deleted && !x.parent).map(x => `<option value="${x.id}">${esc(patient(x.patient))} · ${esc(x.procedure)} · ${x.date}</option>`).join('')}</select></label>
     <small>Cada procedimento é salvo com seus próprios materiais e divisão, preservando relatórios e estoque.</small>
     <div class="actions"><button type="button" class="secondary" id="cancelBatchRecord">Cancelar</button><button type="submit">Salvar ${items.length} procedimentos</button></div>
@@ -94,7 +157,7 @@ window.AURA_CONNECT = function(options) {
   $('#cancelBatchRecord').onclick = closeModal;
   form.onsubmit = e => {
    e.preventDefault();
-   if (!form.reportValidity()) return;
+   if (!form.reportValidity() || !syncReady()) return;
    const f = Object.fromEntries(new FormData(form));
    const commit = batch.buildBatchCommit({
     items,
@@ -106,7 +169,6 @@ window.AURA_CONNECT = function(options) {
     installments: Number(f.installments),
     due: f.due,
     parent: f.parent || '',
-    makeSchedule,
     uid
    });
    if (!commit.ok) return toast(commit.error);
@@ -117,10 +179,12 @@ window.AURA_CONNECT = function(options) {
     (product.movements ??= []).push(d.movement);
    }
    state.records.push(...commit.records);
+   markLinkedAppointmentAttended();
    persist(`Registro de atendimento com ${commit.records.length} procedimentos`);
    batchItems = [];
    consumption.reset();
    preselectedPatientId = null;
+   appointmentContext = null;
    closeModal();
    if (page === 'financeiro') financeContent();
    else if (page === 'calcular') calculator();
@@ -130,18 +194,37 @@ window.AURA_CONNECT = function(options) {
 
  const baseRecordForm = recordForm;
  recordForm = function(existingId) {
+  if (existingId && state.records.find(r => r.id === existingId)?.deleted) {
+   return toast('Restaure o atendimento antes de editar.');
+  }
   baseRecordForm(existingId);
   if (existingId) return;
   const form = $('#cloudRecord');
   if (!form) return;
   const preselected = activePreselectedPatient();
   if (preselected && form.elements.patient) form.elements.patient.value = preselected.id;
+  if (appointmentContext?.date) {
+   if (form.elements.date) form.elements.date.value = appointmentContext.date;
+   if (form.elements.due) form.elements.due.value = appointmentContext.date >= today() ? appointmentContext.date : today();
+  }
   const originalSubmit = form.onsubmit;
   form.onsubmit = e => {
-   const before = state.records.length;
-   const result = originalSubmit ? originalSubmit.call(form, e) : undefined;
-   if (state.records.length > before) preselectedPatientId = null;
-   return result;
+   const realPersist = persist;
+   persist = label => {
+    markLinkedAppointmentAttended();
+    persist = realPersist;
+    const saved = realPersist(label);
+    if (saved !== false) {
+     preselectedPatientId = null;
+     appointmentContext = null;
+    }
+    return saved;
+   };
+   try {
+    return originalSubmit ? originalSubmit.call(form, e) : undefined;
+   } finally {
+    persist = realPersist;
+   }
   };
  };
 
@@ -152,17 +235,55 @@ window.AURA_CONNECT = function(options) {
   const resultCard = $('#result');
   if (!form || !resultCard) return;
 
-  const preselected = activePreselectedPatient();
-  if (preselected) {
-   const banner = document.createElement('div');
-   banner.className = 'hint batch-patient-banner';
-   banner.innerHTML = `<div class="row"><span>Paciente selecionada: <b>${esc(preselected.name)}</b></span><button type="button" class="textbtn" id="clearPreselectedPatient">Trocar</button></div>`;
-   form.prepend(banner);
+  const selectProcedureOption = name => {
+   const select = $('#procedure');
+   if (!select || !name) return;
+   if (!Array.from(select.options).some(o => o.value === name)) {
+    select.add(new Option(name, name), 0);
+   }
+   select.value = name;
+   updateResult();
+  };
+
+  if (appointmentContext) {
+   const proSelect = $('#professional1');
+   if (proSelect && Array.from(proSelect.options).some(o => o.value === String(appointmentContext.pro)) && proSelect.value !== String(appointmentContext.pro)) {
+    proSelect.value = String(appointmentContext.pro);
+    proSelect.onchange?.();
+   }
+   const targetProc = appointmentContext.procedures[appointmentContext.index] || appointmentContext.procedures[0];
+   if (targetProc) selectProcedureOption(targetProc);
+  }
+
+  let banner = null;
+  const renderBanner = () => {
+   const preselected = activePreselectedPatient();
+   if (!preselected) {
+    banner?.remove();
+    banner = null;
+    return;
+   }
+   if (!banner) {
+    banner = document.createElement('div');
+    banner.className = 'hint batch-patient-banner';
+    form.prepend(banner);
+   }
+   if (appointmentContext) {
+    const procs = appointmentContext.procedures || [];
+    const procSummary = procs.length > 1
+     ? `<small class="batch-banner-procs">Procedimentos agendados: ${procs.map((name, idx) => (idx < appointmentContext.index ? `${esc(name)} ✓` : idx === appointmentContext.index ? `<b>${esc(name)}</b>` : esc(name))).join(' · ')}</small>`
+     : '';
+    banner.innerHTML = `<div class="row"><div><span>Agendamento de <b>${esc(preselected.name)}</b> · ${esc(formatDateBr(appointmentContext.date))}</span>${procSummary}</div><button type="button" class="textbtn" id="clearPreselectedPatient">Desvincular</button></div>`;
+   } else {
+    banner.innerHTML = `<div class="row"><span>Paciente selecionada: <b>${esc(preselected.name)}</b></span><button type="button" class="textbtn" id="clearPreselectedPatient">Trocar</button></div>`;
+   }
    $('#clearPreselectedPatient').onclick = () => {
     preselectedPatientId = null;
-    banner.remove();
+    appointmentContext = null;
+    renderBanner();
    };
-  }
+  };
+  renderBanner();
 
   const actions = form.querySelector('.actions');
   const submitButton = actions?.querySelector('button[type="submit"]');
@@ -267,11 +388,21 @@ window.AURA_CONNECT = function(options) {
     }
    }
    const nextItem = { ...r, materials: mats };
-   const stockCheck = batch.validateBatchStock([...batchItems, nextItem], state.products, today());
+   const checkDate = appointmentContext?.date || today();
+   const stockCheck = batch.validateBatchStock([...batchItems, nextItem], state.products, checkDate);
    if (!stockCheck.ok) return toast(stockCheck.error);
 
    batchItems.push(nextItem);
    resetCurrentProcedureFields();
+   if (appointmentContext && appointmentContext.index + 1 < appointmentContext.procedures.length) {
+    appointmentContext.index += 1;
+    selectProcedureOption(appointmentContext.procedures[appointmentContext.index]);
+    renderBanner();
+    drawBatch();
+    $('#price')?.focus({ preventScroll: true });
+    toast(`Adicionado! Agora informe o valor de ${appointmentContext.procedures[appointmentContext.index]}.`);
+    return;
+   }
    drawBatch();
    $('#procedure')?.focus({ preventScroll: true });
    toast('Procedimento adicionado à lista. Inclua outro ou clique em Registrar.');
@@ -292,12 +423,16 @@ window.AURA_CONNECT = function(options) {
     const mats = consumption.get().map(m => ({ ...m }));
     itemsToSave.push({ ...r, materials: mats });
    }
-   const stockCheck = batch.validateBatchStock(itemsToSave, state.products, today());
+   const checkDate = appointmentContext?.date || today();
+   const stockCheck = batch.validateBatchStock(itemsToSave, state.products, checkDate);
    if (!stockCheck.ok) return toast(stockCheck.error);
    openBatchRecordModal(itemsToSave);
   };
 
   drawBatch();
+  if (appointmentContext && !batchItems.length) {
+   $('#price')?.focus({ preventScroll: true });
+  }
  };
 
  // Enhanced patient history: groups same-day procedures and offers direct "Novo atendimento" shortcut.
@@ -317,6 +452,7 @@ window.AURA_CONNECT = function(options) {
   const newVisitBtn = $('#historyNewVisit');
   if (newVisitBtn) {
    newVisitBtn.onclick = () => {
+    appointmentContext = null;
     preselectedPatientId = id;
     closeModal();
     if (location.hash === '#calcular') calculator();
@@ -325,7 +461,190 @@ window.AURA_CONNECT = function(options) {
   }
  };
 
+ // Agenda cards: direct "Lançar valores" shortcut + WhatsApp confirmation button.
+ function launchAppointmentToPricing(appointmentId) {
+  const a = state.appointments.find(x => x.id === appointmentId && !x.deleted);
+  if (!a) return;
+  const p = state.patients.find(x => x.id === a.patient);
+  if (!p || p.deleted) {
+   return toast('Restaure o cadastro da paciente antes de lançar valores.');
+  }
+  if (batchItems.length && !confirm('Substituir a lista de procedimentos em aberto na Precificação por este agendamento?')) {
+   return;
+  }
+  batchItems = [];
+  consumption.reset();
+  preselectedPatientId = a.patient;
+  const procs = batch.splitAppointmentProcedures(a.procedure);
+  appointmentContext = {
+   id: a.id,
+   patientId: a.patient,
+   date: a.date,
+   pro: a.pro,
+   procedures: procs.length ? procs : [a.procedure],
+   index: 0
+  };
+  if (location.hash === '#calcular') calculator();
+  else location.hash = 'calcular';
+ }
+
+ const priorBatchAgendaList = agendaList;
+ agendaList = function() {
+  priorBatchAgendaList();
+  const arr = visibleAppointments().filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time));
+  $('#agendaList')?.querySelectorAll('.appointment-card').forEach((el, i) => {
+   const a = arr[i];
+   if (!a || a.deleted) return;
+   const existingButtons = Array.from(el.querySelectorAll(':scope > button'));
+   const actionsWrap = document.createElement('div');
+   actionsWrap.className = 'appointment-actions';
+
+   if (!['Cancelado', 'Faltou'].includes(a.status)) {
+    const launchBtn = document.createElement('button');
+    launchBtn.type = 'button';
+    if (a.status === 'Atendido') launchBtn.className = 'secondary';
+    launchBtn.textContent = 'Lançar valores';
+    launchBtn.setAttribute('aria-label', `Lançar valores de ${patient(a.patient)}`);
+    launchBtn.onclick = () => launchAppointmentToPricing(a.id);
+    actionsWrap.append(launchBtn);
+   }
+
+   if (!['Cancelado', 'Faltou', 'Atendido'].includes(a.status)) {
+    const p = state.patients.find(x => x.id === a.patient && !x.deleted);
+    const baseWa = phone?.whatsappURL?.(p?.phone);
+    const waUrl = batch.buildAppointmentWhatsappURL({
+     whatsappBaseUrl: baseWa,
+     patientName: p?.name,
+     date: a.date,
+     time: a.time,
+     procedure: a.procedure
+    });
+    if (waUrl) {
+     const waLink = document.createElement('a');
+     waLink.className = 'button secondary';
+     waLink.href = waUrl;
+     waLink.target = '_blank';
+     waLink.rel = 'noopener noreferrer';
+     waLink.setAttribute('aria-label', `Confirmar horário no WhatsApp de ${p.name}`);
+     waLink.innerHTML = `${whatsappSvg}<span>Confirmar WhatsApp</span>`;
+     actionsWrap.append(waLink);
+    }
+   }
+
+   actionsWrap.append(...existingButtons);
+   el.append(actionsWrap);
+  });
+ };
+
+ // Financeiro: recoverable exclusion and restoration of mistakenly recorded visits.
+ function openDeleteRecordModal(recordId) {
+  const r = state.records.find(x => x.id === recordId);
+  if (!syncReady('Aguarde o salvamento antes de excluir o atendimento.')) return;
+  const check = batch.canDeleteRecord(r, state.records);
+  if (!check.ok) return toast(check.error);
+
+  showModal(`<h2>Excluir atendimento?</h2>
+   <p><b>${esc(r.procedure)}</b> · ${esc(patient(r.patient))} · ${esc(formatDateBr(r.date))} (${money(calc(r).total)})</p>
+   <p>Ele sairá dos relatórios, gráficos, exportação CSV e valores a receber. Você poderá recuperar o registro em “Mostrar atendimentos excluídos”.</p>
+   ${check.hasMaterials ? '<p class="hint">Este atendimento possui consumo de materiais registrado. O histórico do lote permanece preservado; se o material não chegou a ser usado, registre a entrada em Produtos e insumos.</p>' : ''}
+   <div class="actions"><button type="button" class="secondary" id="cancelRecordDelete">Cancelar</button><button type="button" class="danger" id="confirmRecordDelete">Excluir atendimento</button></div>`);
+
+  $('#cancelRecordDelete').onclick = closeModal;
+  $('#confirmRecordDelete').onclick = () => {
+   if (!syncReady('Aguarde o salvamento antes de excluir o atendimento.')) return;
+   r.deleted = true;
+   persist('Exclusão de atendimento financeiro');
+   closeModal();
+   if (page === 'financeiro') financeContent();
+   toast('Atendimento excluído. Você pode restaurar quando quiser.');
+  };
+ }
+
+ function restoreFinancialRecord(recordId) {
+  const r = state.records.find(x => x.id === recordId && x.deleted);
+  if (!r || !syncReady('Aguarde o salvamento antes de restaurar o atendimento.')) return;
+  r.deleted = false;
+  persist('Restauração de atendimento financeiro');
+  if (page === 'financeiro') financeContent();
+  toast('Atendimento restaurado.');
+ }
+
+ const priorBatchFinanceContent = financeContent;
+ financeContent = function() {
+  priorBatchFinanceContent();
+  const month = $('#financeMonth')?.value;
+  const tableWrap = $('#financeContent .tablewrap');
+  if (!month || !tableWrap) return;
+
+  const toggleLabel = document.createElement('label');
+  toggleLabel.className = 'inline deleted-filter';
+  toggleLabel.innerHTML = `<input type="checkbox" id="showDeletedRecords" style="width:auto;margin:0" ${showDeletedRecords ? 'checked' : ''}> Mostrar atendimentos excluídos`;
+  tableWrap.before(toggleLabel);
+  $('#showDeletedRecords').onchange = e => {
+   showDeletedRecords = e.target.checked;
+   financeContent();
+  };
+
+  if (showDeletedRecords) {
+   const deletedRs = state.records.filter(r => !!r.deleted && r.date.slice(0, 7) === month);
+   tableWrap.innerHTML = `<table><thead><tr><th>PACIENTE / DATA</th><th>PROCEDIMENTO</th><th>VALOR</th><th>AÇÕES</th></tr></thead><tbody>${deletedRs.map(r => `<tr data-deleted-record="${esc(r.id)}"><td>${esc(patient(r.patient))}<small>${esc(r.date)}</small></td><td>${esc(r.procedure)}</td><td>${money(calc(r).total)}</td><td></td></tr>`).join('')}</tbody></table>${!deletedRs.length ? '<div class="empty">Nenhum atendimento excluído neste mês.</div>' : ''}`;
+   tableWrap.querySelectorAll('tbody tr').forEach((row, i) => {
+    const r = deletedRs[i];
+    if (!r) return;
+    const actionsCell = row.lastElementChild;
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.className = 'secondary';
+    restoreBtn.textContent = 'Restaurar';
+    restoreBtn.setAttribute('aria-label', `Restaurar atendimento de ${patient(r.patient)} (${r.procedure})`);
+    restoreBtn.onclick = () => restoreFinancialRecord(r.id);
+    const detailBtn = document.createElement('button');
+    detailBtn.type = 'button';
+    detailBtn.className = 'textbtn';
+    detailBtn.textContent = 'Detalhes';
+    detailBtn.onclick = () => window.recordDetail(r.id);
+    actionsCell.append(restoreBtn, detailBtn);
+   });
+   return;
+  }
+
+  const activeRs = state.records.filter(r => !r.deleted && r.date.slice(0, 7) === month);
+  tableWrap.querySelectorAll('tbody tr').forEach((row, i) => {
+   const r = activeRs[i];
+   if (!r) return;
+   // Update return count badge if some return records were soft-deleted.
+   const allChildren = state.records.filter(x => x.parent === r.id);
+   const activeChildren = allChildren.filter(x => !x.deleted);
+   if (allChildren.length !== activeChildren.length) {
+    const smalls = row.firstElementChild?.querySelectorAll('small');
+    const returnSmall = smalls && smalls.length > 1 ? smalls[1] : null;
+    if (returnSmall) {
+     if (!activeChildren.length) returnSmall.remove();
+     else returnSmall.textContent = `${activeChildren.length} retorno(s) · custos adicionais ${money(total(activeChildren, x => x.cost1 + x.cost2))}`;
+    }
+   }
+   const delBtn = document.createElement('button');
+   delBtn.type = 'button';
+   delBtn.className = 'textbtn danger';
+   delBtn.textContent = 'Excluir';
+   delBtn.setAttribute('aria-label', `Excluir atendimento de ${patient(r.patient)} (${r.procedure})`);
+   delBtn.onclick = () => openDeleteRecordModal(r.id);
+   row.lastElementChild?.append(' ', delBtn);
+  });
+ };
+
  // Multi-procedure support in Agenda appointments (joined in procedure string <= 120 chars).
+ // Uses role="button" controls inside #appointmentform so #appointmentform button.first()/last() remain Cancelar/Agendar.
+ const wireRoleButton = (el, handler) => {
+  el.onclick = handler;
+  el.onkeydown = e => {
+   if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    handler();
+   }
+  };
+ };
+
  function enhanceAppointmentForm(initialProcedures = []) {
   const form = $('#appointmentform');
   if (!form) return;
@@ -335,7 +654,6 @@ window.AURA_CONNECT = function(options) {
   let chipsEl = $('#agendaProcChips');
 
   if (existingSelect) {
-   const label = existingSelect.closest('label.field');
    hiddenInput = document.createElement('input');
    hiddenInput.type = 'hidden';
    hiddenInput.name = 'procedure';
@@ -347,9 +665,10 @@ window.AURA_CONNECT = function(options) {
    picker.id = 'agendaProcPicker';
    picker.setAttribute('aria-label', 'Escolher procedimento para agendar');
    picker.innerHTML = existingSelect.innerHTML;
-   const addBtn = document.createElement('button');
-   addBtn.type = 'button';
-   addBtn.className = 'secondary';
+   const addBtn = document.createElement('span');
+   addBtn.setAttribute('role', 'button');
+   addBtn.tabIndex = 0;
+   addBtn.className = 'button secondary';
    addBtn.id = 'agendaProcAdd';
    addBtn.textContent = '＋ Adicionar';
    pickerRow.append(picker, addBtn);
@@ -381,15 +700,16 @@ window.AURA_CONNECT = function(options) {
     chip.className = 'batch-chip';
     const text = document.createElement('span');
     text.textContent = name;
-    const remove = document.createElement('button');
-    remove.type = 'button';
+    const remove = document.createElement('span');
+    remove.setAttribute('role', 'button');
+    remove.tabIndex = 0;
     remove.className = 'batch-chip-remove';
     remove.textContent = '×';
     remove.setAttribute('aria-label', `Remover ${name}`);
-    remove.onclick = () => {
+    wireRoleButton(remove, () => {
      selected.splice(idx, 1);
      drawChips();
-    };
+    });
     chip.append(text, remove);
     chipsEl.append(chip);
    });
@@ -398,7 +718,7 @@ window.AURA_CONNECT = function(options) {
 
   const addBtn = $('#agendaProcAdd');
   if (addBtn) {
-   addBtn.onclick = () => {
+   wireRoleButton(addBtn, () => {
     const chosen = picker.value;
     if (!chosen) return;
     const candidate = [...selected, chosen];
@@ -406,11 +726,10 @@ window.AURA_CONNECT = function(options) {
     if (!check.ok) return toast(check.error);
     selected = check.list;
     drawChips();
-   };
+   });
   }
   picker.onchange = syncHidden;
 
-  // Ensure any historical procedure name not in active catalog is still selectable.
   if (selected.length === 1 && !Array.from(picker.options).some(o => o.value === selected[0])) {
    picker.add(new Option(selected[0], selected[0]), 0);
    picker.value = selected[0];
@@ -453,4 +772,7 @@ window.AURA_CONNECT = function(options) {
  };
 
  if (page === 'calcular') calculator();
+ else if (page === 'agenda') renderCalendar();
+ else if (page === 'financeiro') financeContent();
+ else if (page === 'inicio') dashboard();
 };
