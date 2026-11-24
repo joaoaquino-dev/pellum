@@ -2125,6 +2125,112 @@ button.calendar-day:hover {
 }
 
 /* ==========================================================================
+   Múltiplos Procedimentos no Mesmo Atendimento e Agenda
+   ========================================================================== */
+.batch-patient-banner {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+}
+
+.batch-card .batch-item-row {
+  gap: 12px;
+  align-items: center;
+}
+
+.batch-modal-summary {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 12px 0 18px;
+}
+
+.batch-modal-total {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 10px;
+  color: var(--green);
+}
+
+.batch-history-day {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.batch-history-day:last-of-type {
+  border-bottom: 0;
+}
+
+.batch-history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--green);
+  font-size: 0.9rem;
+}
+
+.batch-proc-picker {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.batch-proc-picker select {
+  flex: 1 1 200px;
+}
+
+.batch-proc-picker button {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+.batch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.batch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 999px;
+  background: var(--light);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+.batch-chip-remove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.batch-chip-remove:hover,
+.batch-chip-remove:focus-visible {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ==========================================================================
    Acessibilidade: Redução de Movimento
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
