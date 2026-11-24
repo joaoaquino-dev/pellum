@@ -5,13 +5,14 @@ import {accessNotice} from './access-notice.js';
 import * as phone from './phone.js';
 import {updateRecoveredPassword,passwordRecoveryMessage} from './password-recovery.js';
 import * as teamModel from './team-model.js';
+import * as batchRecords from './batch-records.js';
 import {wireAccountNavigation} from './account-navigation.js';
 import {newUuid} from './uuid.js';
 import {setupSecurityUI} from './security-ui.js';
 import {installActions} from './actions.js';
 import {createClient} from '@supabase/supabase-js';
 import {createClinicalService} from './clinical-service.js';
-installActions();installInterface();globalThis.AURA_CLINIC_ALERTS=clinicAlerts;globalThis.AURA_PHONE=phone;globalThis.AURA_UUID=newUuid;globalThis.AURA_TEAM_MODEL=teamModel;
+installActions();installInterface();globalThis.AURA_CLINIC_ALERTS=clinicAlerts;globalThis.AURA_PHONE=phone;globalThis.AURA_UUID=newUuid;globalThis.AURA_TEAM_MODEL=teamModel;globalThis.AURA_BATCH_RECORDS=batchRecords;
 const minimumNewPasswordLength=AURA_DEPLOY_ENV==='production'?8:12;
 const sb=createClient(AURA_SUPABASE_URL,AURA_SUPABASE_KEY,{auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 if(AURA_DEPLOY_ENV!=='production'){const label=document.createElement('span');label.textContent='Homologação · usar somente dados fictícios';label.className='environment-label';document.querySelector('.notice').append(label)}
