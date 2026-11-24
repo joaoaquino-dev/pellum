@@ -82,6 +82,19 @@ export function resolveCollectorSlot(professionalIds, selectedCollectorProId) {
  return idx >= 0 ? idx : 0;
 }
 
+export function makeSchedule(balance, count, first) {
+ const cents = Math.round(balance * 100);
+ if (cents <= 0) return [];
+ const n = Math.max(1, Math.min(36, Number(count) || 1));
+ const d = new Date(first + 'T12:00:00');
+ return Array.from({ length: n }, (_, i) => {
+  const date = new Date(d.getFullYear(), d.getMonth() + i, 1, 12);
+  date.setDate(Math.min(d.getDate(), new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()));
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return { date: key, value: (Math.floor(cents / n) + (i < cents % n ? 1 : 0)) / 100 };
+ });
+}
+
 export function buildBatchCommit({
  items,
  products,
@@ -92,7 +105,7 @@ export function buildBatchCommit({
  installments,
  due,
  parent = '',
- makeSchedule,
+ makeSchedule: scheduleFn = makeSchedule,
  uid
 }) {
  if (!Array.isArray(items) || !items.length) {
@@ -192,7 +205,7 @@ export function buildBatchCommit({
    transferred: 0,
    materials,
    payments: [],
-   schedule: makeSchedule(fromCents(itemBalanceCents), parsedInstallments, due)
+   schedule: scheduleFn(fromCents(itemBalanceCents), parsedInstallments, due)
   };
   if (record.professionalNames === undefined) delete record.professionalNames;
   records.push(record);
@@ -239,3 +252,34 @@ export function groupRecordsByDate(records) {
   .sort((a, b) => b[0].localeCompare(a[0]))
   .map(([date, items]) => ({ date, items }));
 }
+
+export function buildAppointmentWhatsappURL({ whatsappBaseUrl, patientName, date, time, procedure }) {
+ if (!whatsappBaseUrl) return null;
+ const firstName = String(patientName || '').trim().split(/\s+/)[0] || '';
+ const greeting = firstName ? `Olá, ${firstName}!` : 'Olá!';
+ const dateBr = date ? String(date).split('-').reverse().join('/') : '';
+ const procText = String(procedure || '').trim();
+ const details = [
+  procText ? `de ${procText}` : '',
+  dateBr ? `no dia ${dateBr}` : '',
+  time ? `às ${time}` : ''
+ ].filter(Boolean).join(' ');
+ const message = `${greeting} Passando para confirmar seu atendimento${details ? ' ' + details : ''}. Podemos confirmar?`;
+ return `${whatsappBaseUrl}?text=${encodeURIComponent(message)}`;
+}
+
+export function canDeleteRecord(record, allRecords) {
+ if (!record || record.deleted) {
+  return { ok: false, error: 'Este atendimento já foi excluído.' };
+ }
+ const hasActiveReturn = (allRecords || []).some(r => !r?.deleted && r?.parent === record.id);
+ if (hasActiveReturn) {
+  return { ok: false, error: 'Exclua ou edite primeiro o atendimento de retorno vinculado a este registro.' };
+ }
+ return {
+  ok: true,
+  hasMaterials: Array.isArray(record.materials) && record.materials.length > 0,
+  hasPayments: Number(record.received || 0) > 0 || Number(record.transferred || 0) > 0
+ };
+}
+
