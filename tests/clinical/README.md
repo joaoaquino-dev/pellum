@@ -1,0 +1,49 @@
+# QA clínica isolada
+
+Executar da raiz do repositório. Dependências opcionais de QA estão separadas do build de produção:
+
+```powershell
+npm ci --prefix standalone --workspaces=false
+npm ci --prefix clinical-server --workspaces=false
+npm ci --prefix tests/clinical --workspaces=false
+npm --prefix standalone run build
+Get-ChildItem tests -Filter '*.mjs' -File | ForEach-Object {
+  node $_.FullName
+  if ($LASTEXITCODE -ne 0) { throw "Teste falhou: $($_.Name)" }
+}
+npm --prefix standalone run check
+node --check public/aura/app.js
+node --check public/aura/features.js
+```
+
+O teste de navegador usa Chrome instalado no caminho padrão do Windows. Para outro executável Chromium compatível, definir `PELLUM_BROWSER` com seu caminho absoluto. Não é necessário comprar serviços ou fornecer chave remota. Nunca inserir pacientes reais nas fixtures.
+
+PGlite executa PostgreSQL em memória com a migration clínica real e funções existentes de autorização extraídas da migration de referência. O bootstrap de Auth/sessões é sintético; não executa o serviço Supabase Auth. O teste restaura um dump local em outra instância, sem equivaler à recuperação externa do ambiente comercial.
+
+O navegador exercita o runtime compilado e a camada clínica via HTTP local para esse banco. Confirmações, autenticação inicial e entrega de e-mail são controladas no teste. Não certifica SMTP, MFA remoto, Storage, assinatura, iOS/Safari ou todos os módulos legados. Capturas fictícias ficam em `.codex/clinical-qa/`, ignoradas pelo Git.
+
+A suite não aceita URL de banco remoto e não executa fixtures no projeto conectado. A configuração de desenvolvimento usa loopback por padrão. Resultado registrado em docs/CLINICAL-IMPLEMENTATION-2026-11-09.md.
+
+## Fase 2
+
+Preferir Node 24. Com as três instalações acima, `node scripts/verify-phase2.mjs` executa build local, todos os arquivos tests/*.mjs, sintaxe e auditorias npm. O relatório local fica em outputs/phase2-verification.json. Não há deploy, link de projeto ou SQL remoto nesse comando.
+
+O navegador clínico agora inclui galeria/slider, recuperação de upload pendente, fontes documentais e navegação nas oito áreas existentes. As fixtures de Auth, antivírus e transporte do Storage continuam identificadas como doubles; o handler, os decoders e PostgreSQL são reais locais. O teste separado da tela de autenticação substitui explicitamente o SDK para verificar interface/redirecionamentos, sem comprovar entrega de e-mail.
+
+Os testes de documentos não geram assinatura real. O exercício de recuperação criptografada não restaura produção nem serviço externo. Relatório atual e matriz de aceite: docs/PHASE2-REPORT-2026-11-09.md; o relatório anterior permanece como registro da Fase 1.
+
+Continuidade: tests/business-browser.mjs salva os fluxos de gestão pelo HTTP local e pela cadeia completa de SQL, incluindo consumo de estoque em atendimento solo/parceria, edição histórica e interrupção da sincronização. tests/clinic-management-permissions.mjs caracteriza os poderes amplos existentes e as negações clínicas/administrativas. Resultado e limitações em docs/BUSINESS-REGRESSION-2026-11-09.md; estes testes também usam Auth sintético.
+
+Consumo clínico direto: tests/clinical-stock.mjs e tests/clinical-stock-browser.mjs usam a cadeia completa das migrations em PostgreSQL local. Cobrem saldo insuficiente sem bloquear o registro, resposta perdida, idempotência, rollback, versões e atualização do snapshot. Larguras de celular/tablet/notebook não equivalem a dispositivos físicos. Detalhes em docs/CLINICAL-STOCK-2026-11-10.md.
+
+Modelos de procedimentos e termos: tests/clinical-form-templates.mjs e tests/clinical-form-template-browser.mjs exercitam schema versionado, seleção, respostas condicionais/obrigatórias, snapshot histórico da fonte, permissões, exportação e recuperação local. Auth continua simulado explicitamente; não há assinatura ou envio externo. Registro em docs/CLINICAL-FORM-TEMPLATES-2026-11-10.md.
+
+Retornos: tests/clinical-followups.mjs e tests/clinical-followup-browser.mjs usam SQL/main/runtime locais para previsão por evolução, agendamento atômico, conflitos, replay, cancelamento, conclusão/reabertura e escopo clínico da visão geral. O bootstrap pode excluir explicitamente apenas a migration de retorno no ensaio de atualização; o runner normal continua executando toda a cadeia. Nenhuma fixture aceita banco remoto. Ver docs/CLINICAL-FOLLOWUPS-2026-11-10.md.
+
+Pesquisa: tests/clinical-history-search.mjs e tests/clinical-history-search-browser.mjs verificam SQL/main/runtime locais, alcance além dos 100 registros iniciais, acentos, versões, datas de São Paulo, paginação, permissões/revogação, filtros preservados e descarte de sessão. Auth inicial é um double explícito. Ver docs/CLINICAL-SEARCH-2026-11-10.md; nenhuma fixture aceita banco remoto.
+
+Liberação: node scripts/prepare-release.mjs compara a base inicial ao catálogo sanitizado datado e ensaia a atualização de paciente fictícia existente, exclusivamente offline. tests/release-recovery.mjs recupera pacote criptografado da cadeia atual e compara todas as tabelas da aplicação, incluindo retornos/modelos/estoque. Não são backup ou testes de Auth reais. Ver docs/RELEASE-PREPARATION-2026-11-10.md.
+
+Backup operacional: tests/database-backup.mjs verifica fontes sintéticas de processos filhos e arquivos criptografados. O ensaio separado node scripts/test-native-backup.mjs exige os binários PostgreSQL portáteis verificados e inicializa somente cluster sintético em loopback, encerrando-o ao fim; não conecta ao Supabase. Backup real requer senha/certificado no computador do proprietário; ver docs/SAFE-BACKUP-2026-11-10.md.
+
+Chave portátil: tests/portable-backup-key.mjs verifica scrypt/AES-GCM, vínculo com arquivo, adulteração/limites e recuperação autônoma com outro perfil local e sem DPAPI, usando somente dados e senha fictícios. O USB real só fica confirmado após o proprietário escolher senha local e a verificação criar COMPLETE.json. Ver docs/USB-BACKUP-2026-11-10.md.

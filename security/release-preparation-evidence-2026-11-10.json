@@ -1,0 +1,129 @@
+{
+  "createdAt": "2026-11-10T15:48:25.873Z",
+  "captureDate": "2026-11-10T15:48:24.488Z",
+  "scope": "Offline baseline comparison and incremental migration rehearsal with synthetic local data. No remote writes.",
+  "comparison": {
+    "functions": {
+      "local": 15,
+      "remote": 15,
+      "identical": true
+    },
+    "tables": {
+      "local": 8,
+      "remote": 8,
+      "identical": true
+    },
+    "policies": {
+      "local": 3,
+      "remote": 3,
+      "identical": true
+    },
+    "columns": {
+      "local": 39,
+      "remote": 39,
+      "identical": true
+    },
+    "indexes": {
+      "local": 13,
+      "remote": 13,
+      "identical": true
+    },
+    "triggers": {
+      "local": 0,
+      "remote": 0,
+      "identical": true
+    },
+    "constraints": {
+      "local": 19,
+      "remote": 19,
+      "identical": true
+    },
+    "privileges": {
+      "local": 46,
+      "remote": 46,
+      "identical": true
+    }
+  },
+  "mismatches": [],
+  "baseline": [
+    "20261028152705_aura_initial.sql",
+    "20261028161248_licensing_admin_security.sql",
+    "20261028185829_clinic_professional_roster.sql",
+    "20261028192814_clinic_procedure_catalog.sql",
+    "20261028195618_platform_user_deletion.sql",
+    "20261028202415_owner_user_deletion.sql",
+    "20261028204011_clinic_deletion.sql",
+    "20261028235350_products_edit_archive.sql",
+    "20261029004713_patient_phone_validation.sql",
+    "20261103000000_recoverable_procedure_catalog.sql"
+  ],
+  "pending": [
+    {
+      "file": "20261109211636_clinical_records.sql",
+      "sha256": "69c09fd690c4f6a37e258f7347c79032ef73ce9b9ab5c6b96042b961535498f1"
+    },
+    {
+      "file": "20261109220831_clinical_media.sql",
+      "sha256": "1a45c5dae0d2bf5e28c46190f333194f35706652989e20229133a2c25b2c3555"
+    },
+    {
+      "file": "20261109223043_clinical_documents.sql",
+      "sha256": "cf40d513f4091adc548125763ff7e87d2aab1e233d1d142cf5a9ce893bdd206c"
+    },
+    {
+      "file": "20261110003930_clinical_media_limits.sql",
+      "sha256": "de2eb5e6cf789f3e775bfc0be4379d3f8857a835ba55e55119810cb55255b291"
+    },
+    {
+      "file": "20261110010851_clinical_document_reconciliation.sql",
+      "sha256": "850ea48cafddef59dde85fe8b4d091966738fd75a540900dbde50b0592d53c2d"
+    },
+    {
+      "file": "20261110013613_protect_clinic_owner_membership.sql",
+      "sha256": "7b7ed922f595fbe10072159d29142a32831501da72e8e8cd5518e48199164990"
+    },
+    {
+      "file": "20261110134817_clinical_stock_consumption.sql",
+      "sha256": "91dd2793ce2fc2b468a8839bced051689ef3bb46c2ba076916fbcbe7b419ee4f"
+    },
+    {
+      "file": "20261110144000_clinical_form_templates.sql",
+      "sha256": "d034cdef5b37397c64bc955c84c750066f0f93643e57fc129f280aa9667f60d2"
+    },
+    {
+      "file": "20261110150345_clinical_followups.sql",
+      "sha256": "41867cee0891f3848c8215d6b92402dc3072999d016614a4bb0e3bf9bcba7567"
+    },
+    {
+      "file": "20261110152901_clinical_history_search.sql",
+      "sha256": "b144e12e2aaa423f0cdf3bf096aae377daffdd7854c38aa8260142c28b2dfac9"
+    }
+  ],
+  "migrationHistoryAliases": [
+    {
+      "name": "patient_phone_validation",
+      "local": "20261029004713",
+      "remote": "20261029004749"
+    },
+    {
+      "name": "recoverable_procedure_catalog",
+      "local": "20261103000000",
+      "remote": "20261103010054"
+    }
+  ],
+  "rehearsalPassed": true,
+  "releaseReady": false,
+  "finalTables": 28,
+  "validation": [
+    "baseline catalog exact match",
+    "existing patient snapshot and revision preserved",
+    "new clinical write/search/followup",
+    "all application tables RLS enabled"
+  ],
+  "blockers": [
+    "Migration history aliases not repaired or approved for remote application",
+    "Real Auth/SMTP and two-clinic service validation pending",
+    "External consistent backup and restoration pending",
+    "Clinical/document review and explicit publication authorization pending"
+  ]
+}

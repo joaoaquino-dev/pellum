@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PELLUM DESIGN SYSTEM & ESTILOS GLOBAIS
+   PELLUM DESIGN SYSTEM & ESTILOS GLOBAIS (Fase 2 Clínica e Uso Individual)
    Identidade: Verde institucional (#345e4d), Creme (#f4f4e9), Dourado (#c39960)
    Tipografia: Georgia (títulos) + Segoe UI / Arial (interface e dados)
    Mobile-first, touch-friendly (>=44px), acessível e acabamento profissional.
@@ -28,7 +28,7 @@
   --line: #e3e7df;
   --line-strong: #ccd5c6;
 
-  /* Semântico (Perigo refinado, sem vermelhos estridentes) */
+  /* Semântico (Perigo suave e acolhedor) */
   --danger: #9e4337;
   --danger-bg: #fdf2f0;
   --danger-border: #f3ceca;
@@ -415,15 +415,20 @@ button, .button {
 }
 
 @media (hover: hover) {
-  button:not(:disabled):hover, .button:hover {
+  /* Botão primário: apenas quando não possui classes variantes */
+  button:not(.secondary, .textbtn, .danger, .calendar-day):not(:disabled):hover,
+  .button:not(.secondary, .textbtn, .danger, .calendar-day):hover {
     background: var(--green-hover);
+    color: #fff;
     box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
   }
 }
 
-button:active, .button:active {
+button:not(.secondary, .textbtn, .danger, .calendar-day):active,
+.button:not(.secondary, .textbtn, .danger, .calendar-day):active {
   background: var(--green-active);
+  color: #fff;
   transform: translateY(0);
 }
 
@@ -433,7 +438,10 @@ button:disabled {
   transform: none !important;
 }
 
-.secondary {
+/* Botão secundário */
+.secondary,
+button.secondary,
+a.button.secondary {
   background: var(--surface);
   color: var(--green);
   border: 1px solid var(--line);
@@ -441,14 +449,28 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .secondary:hover {
+  .secondary:not(:disabled):hover,
+  button.secondary:not(:disabled):hover,
+  a.button.secondary:hover {
     background: var(--surface-alt);
     border-color: var(--line-strong);
     color: var(--green-hover);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
 }
 
-.textbtn {
+.secondary:active,
+button.secondary:active,
+a.button.secondary:active {
+  background: var(--light);
+  transform: translateY(0);
+}
+
+/* Botão de texto */
+.textbtn,
+button.textbtn,
+a.textbtn {
   background: transparent;
   color: var(--green);
   border: 0;
@@ -461,23 +483,51 @@ button:disabled {
 }
 
 @media (hover: hover) {
-  .textbtn:hover {
+  .textbtn:not(:disabled):hover,
+  button.textbtn:not(:disabled):hover,
+  a.textbtn:hover {
     background: var(--light);
     color: var(--green-hover);
+    box-shadow: none;
+    transform: none;
   }
 }
 
-.danger {
+.textbtn:active,
+button.textbtn:active,
+a.textbtn:active {
+  background: var(--light-hover);
+  color: var(--green-active);
+  transform: none;
+}
+
+/* Botão de perigo */
+.danger,
+button.danger,
+a.button.danger {
+  background: var(--surface);
   color: var(--danger);
-  border-color: var(--danger-border);
+  border: 1px solid var(--danger-border);
+  box-shadow: var(--shadow-xs);
 }
 
 @media (hover: hover) {
-  .danger:hover {
+  .danger:not(:disabled):hover,
+  button.danger:not(:disabled):hover,
+  a.button.danger:hover {
     background: var(--danger-bg);
     border-color: var(--danger);
     color: var(--danger);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
+}
+
+.danger:active,
+button.danger:active,
+a.button.danger:active {
+  background: #fae2df;
+  transform: translateY(0);
 }
 
 .actions {
@@ -1123,9 +1173,11 @@ body:has(dialog[open]) {
   transition: var(--transition-fast);
 }
 
-.calendar-day:hover {
+.calendar-day:hover,
+button.calendar-day:hover {
   background: var(--surface-alt);
   border-color: var(--line-strong);
+  transform: none;
 }
 
 .calendar-day.today {
@@ -1448,6 +1500,37 @@ body:has(dialog[open]) {
   font-size: 12px;
 }
 
+.auth-activation {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--gold-subtle);
+  border: 1px solid var(--gold-border);
+  border-radius: 10px;
+}
+
+.auth-activation-title {
+  display: block;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.auth-activation p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.auth-activation .button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+}
+
 .access-shell {
   min-height: 75svh;
   padding: 32px 4px;
@@ -1495,7 +1578,7 @@ body:has(dialog[open]) {
   display: none;
 }
 
-.access-primary > button {
+.access-primary > button, .access-primary > a.button {
   width: 100%;
   min-height: 48px;
   margin: 0;
@@ -1667,7 +1750,7 @@ body:has(dialog[open]) {
     margin-left: 180px;
   }
   .content {
-    padding: 22px;
+    padding: 20px 18px;
   }
   .calendar-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -1686,6 +1769,10 @@ body:has(dialog[open]) {
   }
   .grid {
     grid-template-columns: 1fr;
+  }
+  .pricing-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 16px;
   }
   .pill {
     display: none;
@@ -1885,9 +1972,21 @@ body:has(dialog[open]) {
     margin: 0;
   }
   dialog {
-    padding: 22px 18px;
+    padding: 20px 16px;
     width: calc(100vw - 24px);
     max-height: calc(100dvh - 24px);
+    overscroll-behavior: contain;
+  }
+  @supports (padding: max(0px)) {
+    dialog {
+      padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    }
+    .actions {
+      padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+    }
+    .content {
+      padding-bottom: max(35px, env(safe-area-inset-bottom, 35px));
+    }
   }
   .auth-shell {
     min-height: 80svh;
@@ -1934,47 +2033,59 @@ body:has(dialog[open]) {
   }
   .responsive-table tbody {
     display: grid;
-    gap: 16px;
+    gap: 12px;
   }
   .responsive-table tbody tr {
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--surface);
   }
   .responsive-table tbody tr:last-child {
-    border-bottom: 0;
-    padding-bottom: 0;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
   }
   .responsive-table td {
     border: 0;
-    padding: 6px 0;
+    padding: 4px 0;
   }
   .responsive-table td:first-child {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
   }
   .responsive-table td small {
     font-weight: 400;
   }
   .mobile-cell-label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--muted);
-    margin-bottom: 3px;
+    margin-bottom: 1px;
   }
   .responsive-table .table-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px dashed var(--line);
   }
   .responsive-table .table-actions > .mobile-cell-label {
-    flex-basis: 100%;
+    display: none;
   }
   .responsive-table .table-actions > button, .responsive-table .table-actions > a.button {
     margin: 0;
-    flex: 1 1 120px;
+    flex: 1 1 auto;
+    min-height: 38px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
   .responsive-table .table-actions > small {
     flex-basis: 100%;
@@ -1982,6 +2093,141 @@ body:has(dialog[open]) {
   .patient-tablewrap .patient-table {
     min-width: 0;
   }
+}
+
+/* ==========================================================================
+   Precificação Simplificada e Espaço de Trabalho
+   ========================================================================== */
+.pricing-layout {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.pricing-layout > *, .pricing-layout form > * {
+  min-width: 0;
+}
+
+.pricing-layout summary, #sharedManagement summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.pricing-layout summary:focus-visible, #sharedManagement summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.pricing-layout details[open] > summary {
+  margin-bottom: 12px;
+}
+
+/* ==========================================================================
+   Múltiplos Procedimentos no Mesmo Atendimento e Agenda
+   ========================================================================== */
+.batch-patient-banner {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+}
+
+.batch-card .batch-item-row {
+  gap: 12px;
+  align-items: center;
+}
+
+.batch-modal-summary {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 12px 0 18px;
+}
+
+.batch-modal-total {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 10px;
+  color: var(--green);
+}
+
+.batch-history-day {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.batch-history-day:last-of-type {
+  border-bottom: 0;
+}
+
+.batch-history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--green);
+  font-size: 0.9rem;
+}
+
+.batch-proc-picker {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.batch-proc-picker select {
+  flex: 1 1 200px;
+}
+
+.batch-proc-picker button {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+.batch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.batch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 999px;
+  background: var(--light);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+.batch-chip-remove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.batch-chip-remove:hover,
+.batch-chip-remove:focus-visible {
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 /* ==========================================================================

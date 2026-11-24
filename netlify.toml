@@ -1,0 +1,9 @@
+[build]
+  base = "standalone"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  PELLUM_ENV = "production"
+  PELLUM_PUBLIC_ORIGIN = "https://usepellum.netlify.app"

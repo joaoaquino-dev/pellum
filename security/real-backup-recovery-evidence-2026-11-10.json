@@ -1,0 +1,25 @@
+{
+  "verifiedAt": "2026-11-10T17:19:28.497Z",
+  "backupAuthenticated": true,
+  "coreRestorePassed": true,
+  "incrementalUpgradePassed": true,
+  "serverStopped": true,
+  "releaseReady": false,
+  "scope": "Actual encrypted backup, private local PostgreSQL recovery only. No production writes or row data in report. Managed Vault/service configuration not recovered; Auth rows are not a running Auth service.",
+  "originalApplicationTables": 8,
+  "appliedLocalMigrations": [
+    "20261109211636_clinical_records.sql",
+    "20261109220831_clinical_media.sql",
+    "20261109223043_clinical_documents.sql",
+    "20261110003930_clinical_media_limits.sql",
+    "20261110010851_clinical_document_reconciliation.sql",
+    "20261110013613_protect_clinic_owner_membership.sql",
+    "20261110134817_clinical_stock_consumption.sql",
+    "20261110144000_clinical_form_templates.sql",
+    "20261110150345_clinical_followups.sql",
+    "20261110152901_clinical_history_search.sql"
+  ],
+  "originalApplicationRowsUnchanged": true,
+  "authTablesRecovered": 27,
+  "allApplicationTablesHaveRLS": true
+}

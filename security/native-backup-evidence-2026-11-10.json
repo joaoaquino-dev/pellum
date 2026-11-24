@@ -1,0 +1,7 @@
+{
+  "completedAt": "2026-11-10T17:02:15.465Z",
+  "postgres": "pg_dump (PostgreSQL) 17.11",
+  "passed": true,
+  "scope": "Portable PostgreSQL loopback only; native roles dump/custom dump, encrypted stream, authenticated extraction, pg_restore into a second synthetic database, row count and Unicode content preserved. Roles archive was extracted but not replayed into the already initialized cluster. No real Auth, remote backup or production credentials.",
+  "remoteBackupCreated": false
+}

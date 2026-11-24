@@ -1,3 +1,5 @@
 const tabs=[...document.querySelectorAll('[role="tab"]')];
 function select(tab){for(const t of tabs){const active=t===tab;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1;document.getElementById(t.getAttribute('aria-controls')).hidden=!active;}}
 for(const tab of tabs){tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',e=>{let i=tabs.indexOf(tab);if(e.key==='ArrowRight')i=(i+1)%tabs.length;else if(e.key==='ArrowLeft')i=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')i=0;else if(e.key==='End')i=tabs.length-1;else return;e.preventDefault();select(tabs[i]);tabs[i].focus();});}
+const mobileCta=document.querySelector('.mobile-cta'),invitation=document.getElementById('participar');
+if(mobileCta&&invitation&&'IntersectionObserver'in window){new IntersectionObserver(entries=>{const visible=entries.some(entry=>entry.isIntersecting);mobileCta.classList.toggle('is-hidden',visible);mobileCta.setAttribute('aria-hidden',String(visible));mobileCta.tabIndex=visible?-1:0;},{threshold:0.15}).observe(invitation);}

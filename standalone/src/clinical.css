@@ -1,0 +1,61 @@
+.clinical-dialog{width:min(960px,calc(100vw - 24px));max-width:960px;padding:20px;overscroll-behavior:contain;max-height:calc(100dvh - 24px)}
+.clinical-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:sticky;top:-20px;background:#fff;z-index:1;padding:12px 0;border-bottom:1px solid var(--line)}
+.clinical-header h2{margin:8px 0;font:26px Georgia;overflow-wrap:anywhere}
+#clinicalMessage{min-height:24px;padding:12px 0;color:var(--green)}
+.clinical-toolbar{gap:8px}.clinical-toolbar button{flex:1 1 180px;text-align:left}
+.clinical-timeline{display:grid;gap:16px}.clinical-entry{overflow-wrap:anywhere}
+.clinical-entry .cardhead{align-items:flex-start;margin-bottom:12px}.clinical-entry h3{margin:0;font-size:16px}
+.clinical-text{white-space:pre-wrap;color:var(--ink)}
+.clinical-summary h3{font-size:18px;margin-top:0}
+.clinical-alert{padding:16px;border-left:4px solid var(--gold);background:var(--bg);margin:12px 0}.clinical-alert p,.clinical-alert small{color:var(--ink)}
+.clinical-questions{min-width:0;margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:8px}.clinical-questions legend{color:var(--green);font-weight:600;padding:0 6px}
+.clinical-dialog textarea{display:block;width:100%;padding:12px;margin-top:7px;border:1px solid var(--line);border-radius:6px;font:16px 'Segoe UI',Arial,sans-serif;line-height:1.5;color:var(--ink);resize:vertical;background:#fff}
+.clinical-dialog textarea:focus{outline:3px solid var(--light);border-color:var(--green)}
+.clinical-dialog select[multiple]{min-height:120px}.clinical-dialog input[type=checkbox]{accent-color:var(--green)}
+.clinical-dialog .actions{position:sticky;bottom:-20px;background:#fff;border-top:1px solid var(--line);padding:12px 0;padding-bottom:max(12px,env(safe-area-inset-bottom,12px))}
+@media(max-width:767px){.clinical-dialog{padding:16px;max-height:calc(100dvh - 16px)}.clinical-header{top:-16px}.clinical-dialog .actions{bottom:-16px}.clinical-entry .cardhead{flex-wrap:wrap}.clinical-dialog .toolbar .field{width:100%}.clinical-dialog .toolbar input,.clinical-dialog .toolbar select{width:100%}}
+.clinical-help{font-size:.88rem;line-height:1.6;color:var(--muted,#53655b)}
+.clinical-media-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin-top:18px}
+.clinical-media-card img{max-width:100%;height:auto;display:block;border-radius:8px;margin:10px auto}
+.clinical-media-card h4{font-family:Georgia,serif;color:#345e4d}
+.clinical-media-card button{margin:5px 5px 5px 0;min-height:44px}
+.clinical-media-upload{display:grid;grid-template-columns:1fr;gap:10px;margin:16px 0}
+.clinical-image-modal{width:min(95vw,1100px);max-height:94dvh;overflow:auto;border:1px solid #c39960;border-radius:16px;padding:20px;background:#fff;color:#263d33}
+.clinical-image-modal img{max-width:100%;max-height:75dvh;object-fit:contain}
+.clinical-image-modal::backdrop{background:rgba(20,40,30,.6)}
+.clinical-photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.clinical-photo-pair figure{margin:0;min-width:0}
+.clinical-photo-pair figcaption{font-size:.85rem;overflow-wrap:anywhere}
+.clinical-photo-slider{position:relative;height:45dvh;background:#f4f4e9;margin:18px 0}
+.clinical-photo-slider img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.clinical-image-modal input[type=range]{width:100%;accent-color:#345e4d;min-height:44px}
+.clinical-image-modal :focus-visible{outline:2px solid #c39960;outline-offset:2px}
+@media(min-width:760px){.clinical-media-upload{grid-template-columns:1fr 1fr}.clinical-media-upload small,.clinical-media-upload button{grid-column:1/-1}}
+.clinical-stock-row{min-width:0;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:8px}
+.clinical-stock-row legend{padding:0 6px;color:var(--green);font-weight:600}
+.clinical-stock-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}
+.clinical-stock-row input,.clinical-stock-row select{min-height:44px;font-size:16px;width:100%;min-width:0}
+#clinicalStockForm button{min-height:44px}
+.clinical-stock-row small{display:block;line-height:1.5;margin:4px 0}
+@media(max-width:640px){.clinical-stock-fields{grid-template-columns:minmax(0,1fr)}}
+.clinical-optional{margin:14px 0;border:1px solid var(--line);border-radius:8px;padding:0 12px}
+.clinical-optional summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--green);font-weight:600}
+.clinical-optional .field{margin:12px 0}
+.clinical-followup-card{margin:12px 0}
+.clinical-followup-card h4{margin:0 0 8px;font:600 18px Georgia,serif;color:var(--green)}
+.clinical-followup-card span{font-size:13px;color:var(--green);background:var(--bg);padding:4px 8px;border-radius:6px}
+.clinical-followup-card p{margin:10px 0}
+.clinical-followup-list button,#clinicalFollowupForm input,#clinicalFollowupForm select,#clinicalFollowupForm button{min-height:44px}
+#clinicalFollowupForm input,#clinicalFollowupForm select{font-size:16px;max-width:100%}
+.clinical-followup-timegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.clinical-followup-timegrid input{min-width:0;width:100%}
+#clinicalMessage:empty{display:none}
+@media(max-width:360px){.clinical-followup-timegrid{grid-template-columns:minmax(0,1fr)}}
+.clinical-search-period{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.clinical-search-period input{min-width:0;max-width:100%}
+#clinicalHistorySearch input,#clinicalHistorySearch select,#clinicalHistorySearch button{min-height:44px;font-size:16px}
+#clinicalHistorySearch input[type=checkbox]{min-height:0;width:20px;height:20px}
+.clinical-search-card{margin:12px 0}
+.clinical-search-card h4{margin:0 0 8px;color:var(--green);font:600 18px Georgia,serif}
+.clinical-search-summary{white-space:pre-wrap;overflow-wrap:anywhere;max-height:4.5em;overflow:hidden;line-height:1.5}
+@media(max-width:360px){.clinical-search-period{grid-template-columns:minmax(0,1fr)}}
