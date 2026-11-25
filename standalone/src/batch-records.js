@@ -393,3 +393,45 @@ export function buildAppointmentWhatsappURL({ whatsappBaseUrl, patientName, date
   };
  }
 
+ export function addDaysIso(isoDate, days) {
+  const d = new Date(String(isoDate || '') + 'T12:00:00');
+  if (Number.isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + Number(days || 0));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+ }
+
+ export function filterUpcomingAppointments(appointments, startDate, days = 7) {
+  const start = String(startDate || '');
+  const end = addDaysIso(start, Math.max(0, Number(days || 1) - 1));
+  if (!start || !end) return [];
+  return (appointments || [])
+   .filter(a => a && a.date >= start && a.date <= end)
+   .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+ }
+
+ export function distributeDiscountCents(pricesCents, totalDiscountCents) {
+  const list = (pricesCents || []).map(v => Math.max(0, Math.round(Number(v || 0))));
+  const sum = list.reduce((a, b) => a + b, 0);
+  const target = Math.max(0, Math.min(Math.round(totalDiscountCents || 0), sum));
+  if (!list.length) return [];
+  if (target === 0) return list.map(() => 0);
+  if (target >= sum) return list.slice();
+  const shares = list.map((cap, index) => {
+   const exact = (target * cap) / sum;
+   const floor = Math.min(cap, Math.floor(exact));
+   return { index, cap, floor, remainder: exact - floor };
+  });
+  let rem = target - shares.reduce((a, s) => a + s.floor, 0);
+  const ordered = shares.slice().sort((a, b) => (b.remainder - a.remainder) || (b.cap - a.cap) || (a.index - b.index));
+  for (const s of ordered) {
+   if (rem <= 0) break;
+   if (s.floor < s.cap) {
+    s.floor += 1;
+    rem -= 1;
+   }
+  }
+  const out = new Array(list.length);
+  for (const s of shares) out[s.index] = s.floor;
+  return out;
+ }
+

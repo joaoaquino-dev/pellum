@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import {
+ addDaysIso,
  allocateReceivedCents,
  buildAppointmentWhatsappURL,
  buildBatchCommit,
  canDeleteRecord,
  computeDiscountFromFinal,
  computeFinalFromDiscount,
+ distributeDiscountCents,
+ filterUpcomingAppointments,
  formatDiscountSummary,
  groupRecordsByDate,
  joinAppointmentProcedures,
@@ -224,5 +227,20 @@ assert.equal(partialSummary.discount, 100);
 assert.equal(partialSummary.received, 500);
 assert.equal(partialSummary.pending, 500);
 
-console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, WhatsApp confirmation URL, record deletion guards, default prices, discounts, agenda finance summary, and patient history grouping.');
+// 12. Upcoming 7-day agenda filter & proportional discount distribution
+assert.equal(addDaysIso('2026-11-28', 6), '2026-12-04');
+const upcoming = filterUpcomingAppointments([
+ { id: 'u1', date: '2026-11-27', time: '09:00' },
+ { id: 'u2', date: '2026-11-28', time: '14:00' },
+ { id: 'u3', date: '2026-12-04', time: '10:00' },
+ { id: 'u4', date: '2026-12-05', time: '08:00' },
+ { id: 'u5', date: '2026-11-28', time: '09:00' }
+], '2026-11-28', 7);
+assert.deepEqual(upcoming.map(x => x.id), ['u5', 'u2', 'u3']);
+
+const dist = distributeDiscountCents([100000, 50000], 15000);
+assert.deepEqual(dist, [10000, 5000]);
+assert.equal(distributeDiscountCents([10000, 10000, 10000], 100).reduce((a, b) => a + b, 0), 100);
+
+console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, WhatsApp confirmation URL, record deletion guards, default prices, discounts, agenda finance summary, 7-day filter, and patient history grouping.');
 
