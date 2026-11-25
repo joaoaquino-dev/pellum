@@ -2422,6 +2422,141 @@ button.calendar-day:hover {
   }
 }
 
+/* Filtro Dia / Próximos 7 dias, cadastro rápido na Agenda e barra inferior mobile */
+.agenda-view-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+.agenda-view-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  min-height: 38px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.agenda-view-switch button.active {
+  background: var(--green);
+  color: var(--light);
+}
+
+.quick-patient-toggle {
+  display: inline-block;
+  margin: -6px 0 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.quick-patient-box {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+.quick-patient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quick-patient-actions .button {
+  cursor: pointer;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+.more-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.94rem;
+}
+
+.more-menu-item.active {
+  background: rgba(52, 94, 77, 0.12);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-bottom-nav:not([hidden]) {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    background: var(--surface);
+    border-top: 1px solid var(--line-strong);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 16px rgba(24, 38, 32, 0.08);
+  }
+
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 48px;
+    padding: 4px 2px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mobile-bottom-nav a.active,
+  .mobile-bottom-nav button.active {
+    color: var(--green);
+    background: rgba(52, 94, 77, 0.1);
+  }
+}
+
 /* ==========================================================================
    Acessibilidade: Redução de Movimento
    ========================================================================== */
