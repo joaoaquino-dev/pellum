@@ -268,18 +268,128 @@ export function buildAppointmentWhatsappURL({ whatsappBaseUrl, patientName, date
  return `${whatsappBaseUrl}?text=${encodeURIComponent(message)}`;
 }
 
-export function canDeleteRecord(record, allRecords) {
- if (!record || record.deleted) {
-  return { ok: false, error: 'Este atendimento já foi excluído.' };
+ export function canDeleteRecord(record, allRecords) {
+  if (!record || record.deleted) {
+   return { ok: false, error: 'Este atendimento já foi excluído.' };
+  }
+  const hasActiveReturn = (allRecords || []).some(r => !r?.deleted && r?.parent === record.id);
+  if (hasActiveReturn) {
+   return { ok: false, error: 'Exclua ou edite primeiro o atendimento de retorno vinculado a este registro.' };
+  }
+  return {
+   ok: true,
+   hasMaterials: Array.isArray(record.materials) && record.materials.length > 0,
+   hasPayments: Number(record.received || 0) > 0 || Number(record.transferred || 0) > 0
+  };
  }
- const hasActiveReturn = (allRecords || []).some(r => !r?.deleted && r?.parent === record.id);
- if (hasActiveReturn) {
-  return { ok: false, error: 'Exclua ou edite primeiro o atendimento de retorno vinculado a este registro.' };
+
+ export function resolveProcedurePrice(name, procedurePrices, records) {
+  const key = String(name || '').trim();
+  if (!key) return null;
+  if (procedurePrices && typeof procedurePrices === 'object' && Object.prototype.hasOwnProperty.call(procedurePrices, key)) {
+   const raw = Number(procedurePrices[key]);
+   if (Number.isFinite(raw) && raw >= 0 && raw <= 100000000) {
+    return { price: fromCents(roundCents(raw)), source: 'catalog' };
+   }
+  }
+  let latest = null;
+  for (const r of records || []) {
+   if (!r || r.deleted || r.procedure !== key) continue;
+   const price = Number(r.price);
+   if (!Number.isFinite(price) || price <= 0) continue;
+   if (!latest || String(r.date || '') >= String(latest.date || '')) {
+    latest = r;
+   }
+  }
+  if (latest) {
+   return { price: fromCents(roundCents(latest.price)), source: 'history' };
+  }
+  return null;
  }
- return {
-  ok: true,
-  hasMaterials: Array.isArray(record.materials) && record.materials.length > 0,
-  hasPayments: Number(record.received || 0) > 0 || Number(record.transferred || 0) > 0
- };
-}
+
+ export function computeFinalFromDiscount(price, discount) {
+  const p = Math.max(0, roundCents(price));
+  const d = Math.max(0, Math.min(p, roundCents(discount)));
+  return fromCents(p - d);
+ }
+
+ export function computeDiscountFromFinal(price, finalValue) {
+  const p = Math.max(0, roundCents(price));
+  const f = Math.max(0, roundCents(finalValue));
+  if (f > p) return { price: fromCents(f), discount: 0, finalValue: fromCents(f) };
+  return { price: fromCents(p), discount: fromCents(p - f), finalValue: fromCents(f) };
+ }
+
+ export function formatDiscountSummary(price, discount) {
+  const p = roundCents(price);
+  const d = roundCents(discount);
+  if (p <= 0 || d <= 0) return null;
+  const capped = Math.min(p, d);
+  return {
+   price: fromCents(p),
+   discount: fromCents(capped),
+   total: fromCents(p - capped),
+   percent: Math.round((capped * 100) / p)
+  };
+ }
+
+ export function summarizeAppointmentFinance(appointment, records, procedurePrices) {
+  if (!appointment || appointment.deleted) return null;
+  const procs = splitAppointmentProcedures(appointment.procedure);
+  const procKeys = new Set(procs.map(p => p.toLocaleLowerCase('pt-BR')));
+  const matched = (records || []).filter(r =>
+   r &&
+   !r.deleted &&
+   r.patient === appointment.patient &&
+   r.date === appointment.date &&
+   (procKeys.size === 0 || procKeys.has(String(r.procedure || '').trim().toLocaleLowerCase('pt-BR')))
+  );
+
+  if (matched.length > 0) {
+   let priceCents = 0;
+   let discountCents = 0;
+   let totalCents = 0;
+   let receivedCents = 0;
+   for (const r of matched) {
+    const net = itemNetTotalCents(r);
+    const rec = r.received !== undefined && r.received !== null
+     ? Math.max(0, Math.min(net, roundCents(r.received)))
+     : (r.paid ? net : 0);
+    priceCents += Math.max(0, roundCents(r.price));
+    discountCents += Math.max(0, roundCents(r.discount));
+    totalCents += net;
+    receivedCents += rec;
+   }
+   const pendingCents = Math.max(0, totalCents - receivedCents);
+   const status = pendingCents === 0 ? 'paid' : (receivedCents > 0 ? 'partial' : 'pending');
+   return {
+    launched: true,
+    records: matched,
+    price: fromCents(priceCents),
+    discount: fromCents(discountCents),
+    total: fromCents(totalCents),
+    received: fromCents(receivedCents),
+    pending: fromCents(pendingCents),
+    status
+   };
+  }
+
+  let estimatedCents = 0;
+  let pricedCount = 0;
+  for (const name of procs) {
+   const resolved = resolveProcedurePrice(name, procedurePrices, records);
+   if (resolved) {
+    estimatedCents += roundCents(resolved.price);
+    pricedCount += 1;
+   }
+  }
+  return {
+   launched: false,
+   records: [],
+   estimatedTotal: fromCents(estimatedCents),
+   pricedCount,
+   totalCount: procs.length,
+   status: pricedCount > 0 ? 'estimated' : 'unpriced'
+  };
+ }
 
