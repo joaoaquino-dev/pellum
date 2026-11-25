@@ -663,10 +663,192 @@ window.AURA_CONNECT = function(options) {
   else location.hash = 'calcular';
  }
 
+ // Align menu label: "#calcular" is where users both register visits and simulate values.
+ const calcPageEntry = pages.find(p => p[0] === 'calcular');
+ if (calcPageEntry) calcPageEntry[2] = 'Atendimentos';
+
+ let agendaViewMode = 'day'; // 'day' | 'week'
+
+ function openQuickCompleteModal(appointmentId) {
+  if (!syncReady('Aguarde o salvamento antes de concluir o atendimento.')) return;
+  const a = state.appointments.find(x => x.id === appointmentId && !x.deleted);
+  if (!a) return;
+  const p = state.patients.find(x => x.id === a.patient);
+  if (!p || p.deleted) return toast('Restaure o cadastro da paciente antes de concluir.');
+  if ((state.inactivePros || []).includes(a.pro)) {
+   return toast('A profissional deste horário está inativa. Use Lançar valores para escolher outra.');
+  }
+
+  const procs = batch.splitAppointmentProcedures(a.procedure);
+  const itemsBase = procs.map(name => {
+   const resolved = batch.resolveProcedurePrice(name, state.procedurePrices, state.records);
+   return { procedure: name, price: resolved ? resolved.price : 0 };
+  });
+  const baseTotal = itemsBase.reduce((s, x) => s + x.price, 0);
+
+  showModal(`<h2>Concluir atendimento rápido</h2>
+   <p><b>${esc(p.name)}</b> · ${esc(formatDateBr(a.date))} às ${esc(a.time)}<br><small>${esc(a.procedure)} · ${esc(state.names[a.pro])}</small></p>
+   <form id="quickCompleteForm">
+    <div class="formgrid">
+     <label class="field">Valor padrão (R$)<input name="basePrice" type="number" min="0" step="0.01" value="${baseTotal.toFixed(2).replace(/\.00$/, '')}" readonly></label>
+     <label class="field">Desconto (R$)<input name="discount" id="qcDiscount" type="number" min="0" max="${baseTotal.toFixed(2)}" step="0.01" value="0"></label>
+     <label class="field">Por quanto fechou (R$)<input name="finalPrice" id="qcFinal" type="number" min="0" step="0.01" value="${baseTotal.toFixed(2).replace(/\.00$/, '')}" required></label>
+    </div>
+    <label class="field">Pagamento<select name="payMode" id="qcPayMode"><option value="full">Recebido integral</option><option value="pending">Pendente (a receber)</option><option value="partial">Parcial</option></select></label>
+    <div id="qcPartialWrap" hidden><label class="field">Valor já recebido (R$)<input name="received" id="qcReceived" type="number" min="0" step="0.01" value="0"></label></div>
+    <small>Salva no financeiro como atendimento individual (${esc(state.names[a.pro])}) e marca o horário como Atendido.</small>
+    <p class="sectiongap"><button type="button" class="textbtn" id="qcOpenFull">Precisa informar produtos ou parceria? Abrir tela completa →</button></p>
+    <div class="actions"><button type="button" class="secondary" id="qcCancel">Cancelar</button><button type="submit">Concluir e salvar</button></div>
+   </form>`);
+
+  const form = $('#quickCompleteForm');
+  const discInput = $('#qcDiscount');
+  const finalInput = $('#qcFinal');
+  const payMode = $('#qcPayMode');
+  const partialWrap = $('#qcPartialWrap');
+  const recInput = $('#qcReceived');
+
+  const syncFromDiscount = () => {
+   const finalVal = batch.computeFinalFromDiscount(baseTotal, discInput.value);
+   if (document.activeElement !== finalInput) {
+    finalInput.value = finalVal.toFixed(2).replace(/\.00$/, '');
+   }
+  };
+  discInput.oninput = syncFromDiscount;
+  finalInput.oninput = () => {
+   if (finalInput.value === '') return;
+   const next = batch.computeDiscountFromFinal(baseTotal, finalInput.value);
+   discInput.value = String(next.discount);
+  };
+  payMode.onchange = () => {
+   partialWrap.hidden = payMode.value !== 'partial';
+   if (payMode.value === 'partial') recInput.focus({ preventScroll: true });
+  };
+  $('#qcCancel').onclick = closeModal;
+  $('#qcOpenFull').onclick = () => {
+   closeModal();
+   launchAppointmentToPricing(a.id);
+  };
+
+  form.onsubmit = e => {
+   e.preventDefault();
+   if (!syncReady('Aguarde o salvamento antes de concluir o atendimento.')) return;
+   const finalCents = batch.roundCents(finalInput.value);
+   const baseCents = batch.roundCents(baseTotal);
+   if (finalCents < 0) return toast('Informe um valor válido.');
+
+   let pricesCents = itemsBase.map(x => batch.roundCents(x.price));
+   let discountsCents = itemsBase.map(() => 0);
+   if (finalCents > baseCents) {
+    // Increase proportionally on last item if user charged above default
+    pricesCents[pricesCents.length - 1] += (finalCents - baseCents);
+   } else if (finalCents < baseCents) {
+    discountsCents = batch.distributeDiscountCents(pricesCents, baseCents - finalCents);
+   }
+
+   const receivedTotal = payMode.value === 'full'
+    ? batch.fromCents(finalCents)
+    : payMode.value === 'pending'
+     ? 0
+     : Number(recInput.value || 0);
+
+   const commitItems = itemsBase.map((x, idx) => ({
+    procedure: x.procedure,
+    price: batch.fromCents(pricesCents[idx]),
+    discount: batch.fromCents(discountsCents[idx]),
+    cost1: 0,
+    cost2: 0,
+    percent: 100,
+    fee: 0,
+    feeOwner: '0',
+    mode: 'gross',
+    professionalIds: [a.pro],
+    professionalNames: [state.names[a.pro]],
+    materials: []
+   }));
+
+   const commit = batch.buildBatchCommit({
+    items: commitItems,
+    products: state.products,
+    patientId: a.patient,
+    date: a.date,
+    collectorProId: a.pro,
+    receivedTotal,
+    installments: 1,
+    due: a.date,
+    parent: '',
+    uid
+   });
+   if (!commit.ok) return toast(commit.error);
+
+   const beforeRecLen = state.records.length;
+   const beforeStatus = a.status;
+   state.records.push(...commit.records);
+   if (['Agendado', 'Confirmado'].includes(a.status) && !appointmentConflict(a)) {
+    a.status = 'Atendido';
+   }
+   if (persist('Conclusão rápida de atendimento') === false) {
+    state.records.length = beforeRecLen;
+    a.status = beforeStatus;
+    return;
+   }
+   closeModal();
+   renderCalendar();
+   toast('Atendimento concluído e registrado no financeiro.');
+  };
+ }
+
+ const priorBatchAgenda = agenda;
+ agenda = function() {
+  priorBatchAgenda();
+  const dayCard = $('.day-card');
+  const deletedFilter = dayCard?.querySelector('.deleted-filter');
+  if (dayCard && deletedFilter && !$('#agendaViewSwitch')) {
+   const sw = document.createElement('div');
+   sw.className = 'agenda-view-switch';
+   sw.id = 'agendaViewSwitch';
+   sw.setAttribute('role', 'tablist');
+   sw.setAttribute('aria-label', 'Período da agenda');
+   sw.innerHTML = `<button type="button" role="tab" id="agendaModeDay" class="${agendaViewMode === 'day' ? 'active' : ''}" aria-selected="${agendaViewMode === 'day'}">Dia selecionado</button><button type="button" role="tab" id="agendaModeWeek" class="${agendaViewMode === 'week' ? 'active' : ''}" aria-selected="${agendaViewMode === 'week'}">Próximos 7 dias</button>`;
+   deletedFilter.before(sw);
+   $('#agendaModeDay').onclick = () => {
+    if (agendaViewMode === 'day') return;
+    agendaViewMode = 'day';
+    $('#agendaModeDay').classList.add('active');
+    $('#agendaModeDay').setAttribute('aria-selected', 'true');
+    $('#agendaModeWeek').classList.remove('active');
+    $('#agendaModeWeek').setAttribute('aria-selected', 'false');
+    agendaList();
+   };
+   $('#agendaModeWeek').onclick = () => {
+    if (agendaViewMode === 'week') return;
+    agendaViewMode = 'week';
+    $('#agendaModeWeek').classList.add('active');
+    $('#agendaModeWeek').setAttribute('aria-selected', 'true');
+    $('#agendaModeDay').classList.remove('active');
+    $('#agendaModeDay').setAttribute('aria-selected', 'false');
+    agendaList();
+   };
+  }
+ };
+
  const priorBatchAgendaList = agendaList;
  agendaList = function() {
-  priorBatchAgendaList();
-  const arr = visibleAppointments().filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time));
+  const isWeek = agendaViewMode === 'week';
+  if (isWeek) {
+   const arr = batch.filterUpcomingAppointments(visibleAppointments(), selectedDay, 7);
+   const endIso = batch.addDaysIso(selectedDay, 6);
+   const titleEl = $('#dayTitle');
+   if (titleEl) titleEl.textContent = `Próximos 7 dias (${formatDateBr(selectedDay).slice(0, 5)} a ${formatDateBr(endIso).slice(0, 5)})`;
+   $('#agendaList').innerHTML = arr.length
+    ? arr.map(a => `<article class="appointment-card"><div class="appointment-title"><strong>${esc(formatDateBr(a.date).slice(0, 5))} · ${a.time}</strong><span class="tag">${a.duration} min</span></div><b>${esc(patient(a.patient))}</b><small>${esc(a.procedure)}<br>${esc(state.names[a.pro])}</small>${a.deleted ? `<button class="secondary" onclick="restoreAppointment('${a.id}')">Restaurar agendamento</button>` : `<label class="field">Status<select aria-label="Status de ${esc(patient(a.patient))}" onchange="setStatus('${a.id}',this.value)">${['Agendado','Confirmado','Atendido','Cancelado','Faltou'].map(s => `<option ${a.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label><button class="textbtn danger" onclick="deleteAppointment('${a.id}')">Excluir agendamento</button><button class="secondary" onclick="editAppointment('${a.id}')">Editar horário</button><button class="secondary" onclick="returnAppointment('${a.id}')">Agendar retorno</button>`}</article>`).join('')
+    : `<div class="empty">${showDeletedAppointments ? 'Nenhum agendamento excluído nos próximos 7 dias.' : 'Nenhum atendimento nos próximos 7 dias.'}</div>${!showDeletedAppointments ? '<button class="secondary" onclick="appointmentForm()">＋ Agendar</button>' : ''}`;
+  } else {
+   priorBatchAgendaList();
+  }
+  const arr = isWeek
+   ? batch.filterUpcomingAppointments(visibleAppointments(), selectedDay, 7)
+   : visibleAppointments().filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time));
   let dayTotalCents = 0;
   let dayReceivedCents = 0;
   let dayPendingCents = 0;
@@ -711,9 +893,20 @@ window.AURA_CONNECT = function(options) {
    }
 
    if (isActive) {
+    if (!fin?.launched && fin?.status === 'estimated' && fin.pricedCount === fin.totalCount) {
+     const quickBtn = document.createElement('button');
+     quickBtn.type = 'button';
+     quickBtn.textContent = 'Concluir rápido';
+     quickBtn.setAttribute('aria-label', `Concluir atendimento rápido de ${patient(a.patient)}`);
+     quickBtn.onclick = () => openQuickCompleteModal(a.id);
+     actionsWrap.append(quickBtn);
+    }
+
     const launchBtn = document.createElement('button');
     launchBtn.type = 'button';
-    if (a.status === 'Atendido' || fin?.launched) launchBtn.className = 'secondary';
+    if (a.status === 'Atendido' || fin?.launched || (!fin?.launched && fin?.status === 'estimated' && fin.pricedCount === fin.totalCount)) {
+     launchBtn.className = 'secondary';
+    }
     launchBtn.textContent = 'Lançar valores';
     launchBtn.setAttribute('aria-label', `Lançar valores de ${patient(a.patient)}`);
     launchBtn.onclick = () => launchAppointmentToPricing(a.id);
@@ -768,7 +961,7 @@ window.AURA_CONNECT = function(options) {
    if (agendaListEl) {
     const summary = document.createElement('div');
     summary.className = 'agenda-day-summary';
-    summary.innerHTML = `<div><small>Total do dia</small><b>${money(batch.fromCents(dayTotalCents))}</b></div><div><small>Recebido</small><b>${money(batch.fromCents(dayReceivedCents))}</b></div><div><small>Falta receber</small><b>${money(batch.fromCents(dayPendingCents))}</b></div>`;
+    summary.innerHTML = `<div><small>${isWeek ? 'Total (7 dias)' : 'Total do dia'}</small><b>${money(batch.fromCents(dayTotalCents))}</b></div><div><small>Recebido</small><b>${money(batch.fromCents(dayReceivedCents))}</b></div><div><small>Falta receber</small><b>${money(batch.fromCents(dayPendingCents))}</b></div>`;
     agendaListEl.prepend(summary);
    }
   }
@@ -886,6 +1079,69 @@ window.AURA_CONNECT = function(options) {
  function enhanceAppointmentForm(initialProcedures = []) {
   const form = $('#appointmentform');
   if (!form) return;
+
+  // Quick patient registration inline inside Agenda modal (uses span[role="button"] to preserve button.first()/last()).
+  const patientSelect = form.querySelector('select[name="patient"]');
+  const patientField = patientSelect?.closest('label.field');
+  if (patientSelect && patientField && !$('#agendaQuickPatientToggle')) {
+   const toggle = document.createElement('span');
+   toggle.id = 'agendaQuickPatientToggle';
+   toggle.setAttribute('role', 'button');
+   toggle.tabIndex = 0;
+   toggle.className = 'textbtn quick-patient-toggle';
+   toggle.textContent = '＋ Cadastrar nova paciente';
+
+   const box = document.createElement('div');
+   box.id = 'agendaQuickPatientBox';
+   box.className = 'quick-patient-box';
+   box.hidden = true;
+   box.innerHTML = `<label class="field">Nome da nova paciente<input id="quickPatientName" type="text" maxlength="100" placeholder="Nome completo" autocomplete="off"></label><label class="field">WhatsApp com DDD (opcional)<input id="quickPatientPhone" type="tel" maxlength="20" placeholder="(61) 99999-9999" autocomplete="off"></label><div class="quick-patient-actions"><span role="button" tabindex="0" class="button secondary" id="quickPatientCancel">Cancelar</span><span role="button" tabindex="0" class="button" id="quickPatientSave">Salvar paciente</span></div>`;
+
+   patientField.after(toggle, box);
+
+   const nameInput = $('#quickPatientName');
+   const phoneInput = $('#quickPatientPhone');
+   if (phoneInput && phone?.formatPhone) {
+    phoneInput.oninput = () => {
+     const formatted = phone.formatPhone(phoneInput.value);
+     if (formatted !== phoneInput.value) phoneInput.value = formatted;
+    };
+   }
+
+   wireRoleButton(toggle, () => {
+    box.hidden = !box.hidden;
+    if (!box.hidden) nameInput?.focus({ preventScroll: true });
+   });
+   wireRoleButton($('#quickPatientCancel'), () => {
+    box.hidden = true;
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+   });
+   wireRoleButton($('#quickPatientSave'), () => {
+    if (!syncReady('Aguarde o salvamento antes de cadastrar a paciente.')) return;
+    const rawName = (nameInput?.value || '').trim();
+    const rawPhone = (phoneInput?.value || '').trim();
+    if (!rawName) return toast('Informe o nome da paciente.');
+    if (rawPhone && phone?.validPhone && !phone.validPhone(rawPhone)) {
+     return toast('Telefone inválido. Informe DDD e 10 ou 11 dígitos, ou deixe vazio.');
+    }
+    const formattedPhone = rawPhone && phone?.formatPhone ? phone.formatPhone(rawPhone) : rawPhone;
+    const newPatient = { id: uid(), name: rawName, phone: formattedPhone, note: '' };
+    state.patients.push(newPatient);
+    if (persist('Cadastro rápido de paciente') === false) {
+     state.patients.pop();
+     return;
+    }
+    const opt = new Option(newPatient.name, newPatient.id, true, true);
+    patientSelect.add(opt);
+    patientSelect.value = newPatient.id;
+    box.hidden = true;
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    toast('Paciente cadastrada e selecionada.');
+   });
+  }
+
   const existingSelect = form.querySelector('select[name="procedure"]');
   let hiddenInput = form.querySelector('input[type="hidden"][name="procedure"]');
   let picker = $('#agendaProcPicker');
@@ -1009,8 +1265,62 @@ window.AURA_CONNECT = function(options) {
   enhanceAppointmentForm(batch.splitAppointmentProcedures(a?.procedure));
  };
 
+ // Mobile bottom navigation bar (<= 767px) for quick thumb access without breaking #nav tests.
+ function ensureMobileBottomNav() {
+  if ($('#mobileBottomNav')) return;
+  const bar = document.createElement('nav');
+  bar.id = 'mobileBottomNav';
+  bar.className = 'mobile-bottom-nav';
+  bar.setAttribute('aria-label', 'Navegação rápida');
+  const primary = [
+   ['inicio', uiIcon('overview'), 'Início'],
+   ['agenda', uiIcon('calendar'), 'Agenda'],
+   ['pacientes', uiIcon('patients'), 'Pacientes'],
+   ['calcular', uiIcon('diamond'), 'Atender']
+  ];
+  bar.innerHTML = primary.map(([id, icon, label]) => `<a href="#${id}" data-bottom-tab="${id}">${icon}<span>${label}</span></a>`).join('')
+   + `<button type="button" id="mobileMoreBtn" aria-label="Mais opções">${uiIcon('settings')}<span>Mais</span></button>`;
+  document.body.append(bar);
+
+  $('#mobileMoreBtn').onclick = () => {
+   const primaryIds = new Set(primary.map(p => p[0]));
+   const extras = pages.filter(([id]) => !primaryIds.has(id));
+   const adminLink = $('#nav a[href="#admin"]');
+   const linksHtml = extras.map(([id, icon, name]) => `<a class="more-menu-item ${page === id ? 'active' : ''}" href="#${id}">${icon}<span>${esc(name)}</span></a>`).join('')
+    + (adminLink ? `<a class="more-menu-item ${page === 'admin' ? 'active' : ''}" href="#admin">${uiIcon('settings')}<span>Administração</span></a>` : '');
+   showModal(`<h2>Mais áreas</h2><div class="more-menu-list">${linksHtml}</div><div class="actions"><button type="button" class="secondary" id="closeMoreMenu">Fechar</button></div>`);
+   $('#closeMoreMenu').onclick = closeModal;
+   $('#dialogbody').querySelectorAll('.more-menu-item').forEach(a => {
+    a.onclick = () => closeModal();
+   });
+  };
+ }
+
+ function syncMobileBottomNav() {
+  ensureMobileBottomNav();
+  const bar = $('#mobileBottomNav');
+  if (!bar) return;
+  const asideHidden = $('aside')?.hidden;
+  bar.hidden = !!asideHidden;
+  const current = location.hash.slice(1) || page || 'inicio';
+  const primarySet = new Set(['inicio', 'agenda', 'pacientes', 'calcular']);
+  bar.querySelectorAll('[data-bottom-tab]').forEach(a => {
+   a.classList.toggle('active', a.dataset.bottomTab === current);
+  });
+  const moreBtn = $('#mobileMoreBtn');
+  if (moreBtn) moreBtn.classList.toggle('active', !primarySet.has(current));
+ }
+
+ const priorBatchRoute = route;
+ route = function() {
+  priorBatchRoute();
+  syncMobileBottomNav();
+ };
+ window.addEventListener('hashchange', () => setTimeout(syncMobileBottomNav, 0));
+ syncMobileBottomNav();
+
  if (page === 'calcular') calculator();
- else if (page === 'agenda') renderCalendar();
+ else if (page === 'agenda') agenda();
  else if (page === 'financeiro') financeContent();
  else if (page === 'inicio') dashboard();
 };
