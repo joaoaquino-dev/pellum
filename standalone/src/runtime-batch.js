@@ -71,7 +71,26 @@ window.AURA_CONNECT = function(options) {
   if (state.records.find(r => r.id === id)?.deleted) {
    return toast('Restaure o atendimento antes de registrar recebimento.');
   }
-  return baseReceivePayment(id);
+  const result = baseReceivePayment(id);
+  const payForm = $('#payForm');
+  if (payForm && page !== 'financeiro') {
+   const origSubmit = payForm.onsubmit;
+   payForm.onsubmit = e => {
+    const origFin = financeContent;
+    financeContent = () => {
+     if (page === 'agenda') renderCalendar();
+     else if (page === 'inicio') dashboard();
+     else route();
+     toast('Recebimento registrado.');
+    };
+    try {
+     return origSubmit ? origSubmit.call(payForm, e) : undefined;
+    } finally {
+     financeContent = origFin;
+    }
+   };
+  }
+  return result;
  };
  const baseTransferPayment = window.transferPayment;
  window.transferPayment = id => {
@@ -235,6 +254,142 @@ window.AURA_CONNECT = function(options) {
   const resultCard = $('#result');
   if (!form || !resultCard) return;
 
+  const priceInput = $('#price');
+  const discountInput = $('#discount');
+  let finalPriceInput = null;
+  let priceMetaEl = null;
+
+  const syncFinalFromInputs = () => {
+   if (!finalPriceInput || !priceInput || !discountInput) return;
+   const val = batch.computeFinalFromDiscount(priceInput.value, discountInput.value);
+   if (document.activeElement !== finalPriceInput) {
+    finalPriceInput.value = val.toFixed(2).replace(/\.00$/, '');
+   }
+  };
+
+  const updatePriceMeta = () => {
+   if (!priceMetaEl || !priceInput) return;
+   const procName = $('#procedure')?.value || '';
+   const stored = window.AURA_PROCEDURE_PRICE?.get?.(procName) ?? null;
+   const resolved = batch.resolveProcedurePrice(procName, state.procedurePrices, state.records);
+   const currentPrice = Number(priceInput.value || 0);
+   const currentCents = batch.roundCents(currentPrice);
+   const storedCents = stored !== null ? batch.roundCents(stored) : null;
+   let infoText = 'Sem preço padrão salvo';
+   let btnLabel = 'Salvar como preço padrão';
+   let showBtn = Number.isFinite(currentPrice) && currentPrice > 0;
+   if (stored !== null) {
+    if (storedCents === currentCents) {
+     infoText = `Preço padrão salvo: ${money(stored)}`;
+     showBtn = false;
+    } else {
+     infoText = `Preço padrão atual: ${money(stored)}`;
+     btnLabel = 'Atualizar preço padrão';
+    }
+   } else if (resolved?.source === 'history') {
+    infoText = `Último valor usado: ${money(resolved.price)}`;
+   }
+   priceMetaEl.innerHTML = `<span>${esc(infoText)}</span>${showBtn ? `<button type="button" class="textbtn" id="saveDefaultPriceBtn">${esc(btnLabel)}</button>` : ''}`;
+   const saveBtn = $('#saveDefaultPriceBtn');
+   if (saveBtn) {
+    saveBtn.onclick = () => {
+     if (!syncReady()) return;
+     if (window.AURA_PROCEDURE_PRICE?.set?.(procName, priceInput.value)) {
+      updatePriceMeta();
+      toast(`Preço padrão de ${procName} salvo.`);
+     }
+    };
+   }
+  };
+
+  const applyProcedureDefaultPrice = (procName, { force = false } = {}) => {
+   if (!priceInput || !discountInput) return;
+   const resolved = batch.resolveProcedurePrice(procName, state.procedurePrices, state.records);
+   if (resolved) {
+    priceInput.value = String(resolved.price);
+    discountInput.value = '0';
+   } else if (force) {
+    priceInput.value = '0';
+    discountInput.value = '0';
+   }
+   syncFinalFromInputs();
+   updateResult();
+   updatePriceMeta();
+  };
+
+  if (priceInput && discountInput) {
+   const priceGrid = priceInput.closest('.formgrid');
+   if (priceGrid) {
+    priceGrid.classList.add('calc-price-grid');
+    const finalField = document.createElement('label');
+    finalField.className = 'field';
+    finalField.innerHTML = 'Por quanto fechou (R$)<input id="finalPrice" type="number" min="0" step="0.01" placeholder="Valor final">';
+    priceGrid.append(finalField);
+    finalPriceInput = $('#finalPrice');
+
+    priceMetaEl = document.createElement('div');
+    priceMetaEl.className = 'calc-price-meta';
+    priceGrid.after(priceMetaEl);
+
+    priceInput.addEventListener('input', () => {
+     syncFinalFromInputs();
+     updatePriceMeta();
+    });
+    discountInput.addEventListener('input', () => {
+     syncFinalFromInputs();
+    });
+    finalPriceInput.addEventListener('input', () => {
+     if (finalPriceInput.value === '') return;
+     const next = batch.computeDiscountFromFinal(priceInput.value, finalPriceInput.value);
+     if (batch.roundCents(next.price) !== batch.roundCents(priceInput.value)) {
+      priceInput.value = String(next.price);
+     }
+     discountInput.value = String(next.discount);
+     updateResult();
+     updatePriceMeta();
+    });
+   }
+  }
+
+  // Collapse secondary helper tools to keep Precificação lightweight on first contact.
+  const packInput = $('#packPrice');
+  const packHint = packInput?.closest('.hint');
+  if (packHint && !packHint.closest('details')) {
+   const details = document.createElement('details');
+   details.className = 'calc-collapsible sectiongap';
+   const summary = document.createElement('summary');
+   summary.textContent = 'Calcular custo por embalagem (opcional)';
+   packHint.replaceWith(details);
+   details.append(summary, packHint);
+  }
+  const targetNetInput = $('#targetNet');
+  if (targetNetInput) {
+   const targetField = targetNetInput.closest('.field');
+   const targetHeading = targetField?.previousElementSibling?.tagName === 'H2' ? targetField.previousElementSibling : null;
+   const targetBtn = targetField?.nextElementSibling?.tagName === 'BUTTON' ? targetField.nextElementSibling : null;
+   const targetSmall = targetBtn?.nextElementSibling?.tagName === 'SMALL' ? targetBtn.nextElementSibling : null;
+   const targetHr = targetHeading?.previousElementSibling?.tagName === 'HR' ? targetHeading.previousElementSibling : null;
+   if (targetField && !targetField.closest('details')) {
+    const details = document.createElement('details');
+    details.className = 'calc-collapsible sectiongap';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Simular preço por objetivo de lucro (opcional)';
+    const body = document.createElement('div');
+    body.className = 'calc-collapsible-body';
+    if (targetHr) targetHr.remove();
+    if (targetHeading) {
+     targetHeading.replaceWith(details);
+     targetHeading.remove();
+    } else {
+     targetField.before(details);
+    }
+    body.append(targetField);
+    if (targetBtn) body.append(targetBtn);
+    if (targetSmall) body.append(targetSmall);
+    details.append(summary, body);
+   }
+  }
+
   const selectProcedureOption = name => {
    const select = $('#procedure');
    if (!select || !name) return;
@@ -242,8 +397,12 @@ window.AURA_CONNECT = function(options) {
     select.add(new Option(name, name), 0);
    }
    select.value = name;
-   updateResult();
+   applyProcedureDefaultPrice(name);
   };
+
+  $('#procedure')?.addEventListener('change', e => {
+   applyProcedureDefaultPrice(e.target.value);
+  });
 
   if (appointmentContext) {
    const proSelect = $('#professional1');
@@ -253,6 +412,8 @@ window.AURA_CONNECT = function(options) {
    }
    const targetProc = appointmentContext.procedures[appointmentContext.index] || appointmentContext.procedures[0];
    if (targetProc) selectProcedureOption(targetProc);
+  } else {
+   applyProcedureDefaultPrice($('#procedure')?.value || '');
   }
 
   let banner = null;
@@ -371,7 +532,9 @@ window.AURA_CONNECT = function(options) {
    if ($('#discount')) $('#discount').value = '0';
    if ($('#cost1')) $('#cost1').value = '0';
    if ($('#cost2')) $('#cost2').value = '0';
+   syncFinalFromInputs();
    updateResult();
+   updatePriceMeta();
   };
 
   addButton.onclick = () => {
@@ -435,14 +598,26 @@ window.AURA_CONNECT = function(options) {
   }
  };
 
- // Enhanced patient history: groups same-day procedures and offers direct "Novo atendimento" shortcut.
+ // Enhanced patient history: groups same-day procedures, surfaces discounts/payment status, and offers direct "Novo atendimento" shortcut.
  patientHistory = function(id) {
   const p = state.patients.find(x => x.id === id);
   const groups = batch.groupRecordsByDate(state.records.filter(r => r.patient === id && !r.deleted));
   const body = groups.length
    ? groups.map(g => {
     const dayTotal = g.items.reduce((sum, r) => sum + calc(r).total, 0);
-    const rows = g.items.map(r => `<div class="row"><div>${esc(r.procedure)}</div><b>${money(calc(r).total)}</b></div>`).join('');
+    const rows = g.items.map(r => {
+     const totalVal = calc(r).total;
+     const receivedVal = r.received ?? (r.paid ? totalVal : 0);
+     const pendingVal = Math.max(0, Math.round((totalVal - receivedVal) * 100) / 100);
+     const disc = batch.formatDiscountSummary(r.price, r.discount);
+     const discLine = disc
+      ? `<small class="history-item-meta">Tabela ${money(disc.price)} · Desconto ${money(disc.discount)} (${disc.percent}%)</small>`
+      : '';
+     const payBadge = pendingVal === 0
+      ? '<span class="finance-badge paid">Pago</span>'
+      : `<span class="finance-badge pending">Falta ${money(pendingVal)}</span>`;
+     return `<div class="row history-item-row"><div><span>${esc(r.procedure)}</span>${discLine}</div><div class="history-item-right"><b>${money(totalVal)}</b>${payBadge}</div></div>`;
+    }).join('');
     return `<div class="batch-history-day"><div class="batch-history-head"><span>${esc(formatDateBr(g.date))}</span>${g.items.length > 1 ? `<small>${g.items.length} procedimentos · ${money(dayTotal)}</small>` : ''}</div>${rows}</div>`;
    }).join('')
    : '<p>Nenhum atendimento registrado.</p>';
@@ -492,6 +667,11 @@ window.AURA_CONNECT = function(options) {
  agendaList = function() {
   priorBatchAgendaList();
   const arr = visibleAppointments().filter(a => a.date === selectedDay).sort((a, b) => a.time.localeCompare(b.time));
+  let dayTotalCents = 0;
+  let dayReceivedCents = 0;
+  let dayPendingCents = 0;
+  let dayHasFinance = false;
+
   $('#agendaList')?.querySelectorAll('.appointment-card').forEach((el, i) => {
    const a = arr[i];
    if (!a || a.deleted) return;
@@ -499,14 +679,62 @@ window.AURA_CONNECT = function(options) {
    const actionsWrap = document.createElement('div');
    actionsWrap.className = 'appointment-actions';
 
-   if (!['Cancelado', 'Faltou'].includes(a.status)) {
+   const isActive = !['Cancelado', 'Faltou'].includes(a.status);
+   const fin = isActive ? batch.summarizeAppointmentFinance(a, state.records, state.procedurePrices) : null;
+   if (fin) {
+    const finBox = document.createElement('div');
+    finBox.className = 'appointment-finance';
+    if (fin.launched) {
+     dayHasFinance = true;
+     dayTotalCents += batch.roundCents(fin.total);
+     dayReceivedCents += batch.roundCents(fin.received);
+     dayPendingCents += batch.roundCents(fin.pending);
+     const discBadge = fin.discount > 0 ? `<small>Desc. ${money(fin.discount)}</small>` : '';
+     const statusBadge = fin.status === 'paid'
+      ? '<span class="finance-badge paid">Pago</span>'
+      : fin.status === 'partial'
+       ? `<span class="finance-badge pending">Pago ${money(fin.received)} · Falta ${money(fin.pending)}</span>`
+       : `<span class="finance-badge pending">A receber ${money(fin.pending)}</span>`;
+     finBox.innerHTML = `<div class="appointment-finance-value"><strong>${money(fin.total)}</strong>${discBadge}</div>${statusBadge}`;
+    } else if (fin.status === 'estimated') {
+     dayHasFinance = true;
+     dayTotalCents += batch.roundCents(fin.estimatedTotal);
+     dayPendingCents += batch.roundCents(fin.estimatedTotal);
+     const partialHint = fin.pricedCount < fin.totalCount ? ' (parcial)' : '';
+     finBox.innerHTML = `<div class="appointment-finance-value"><span>Previsto: <b>${money(fin.estimatedTotal)}</b>${partialHint}</span></div><span class="finance-badge estimated">A lançar</span>`;
+    } else {
+     finBox.innerHTML = '<div class="appointment-finance-value"><small>Sem preço padrão definido</small></div>';
+    }
+    const statusField = el.querySelector(':scope > label.field');
+    if (statusField) statusField.before(finBox);
+    else el.append(finBox);
+   }
+
+   if (isActive) {
     const launchBtn = document.createElement('button');
     launchBtn.type = 'button';
-    if (a.status === 'Atendido') launchBtn.className = 'secondary';
+    if (a.status === 'Atendido' || fin?.launched) launchBtn.className = 'secondary';
     launchBtn.textContent = 'Lançar valores';
     launchBtn.setAttribute('aria-label', `Lançar valores de ${patient(a.patient)}`);
     launchBtn.onclick = () => launchAppointmentToPricing(a.id);
     actionsWrap.append(launchBtn);
+
+    if (fin?.launched && fin.pending > 0) {
+     const unpaid = fin.records.find(r => {
+      const net = calc(r).total;
+      const rec = r.received ?? (r.paid ? net : 0);
+      return net - rec > 0.001;
+     });
+     if (unpaid) {
+      const payBtn = document.createElement('button');
+      payBtn.type = 'button';
+      payBtn.className = 'secondary';
+      payBtn.textContent = 'Receber';
+      payBtn.setAttribute('aria-label', `Registrar recebimento de ${patient(a.patient)}`);
+      payBtn.onclick = () => window.receivePayment(unpaid.id);
+      actionsWrap.append(payBtn);
+     }
+    }
    }
 
    if (!['Cancelado', 'Faltou', 'Atendido'].includes(a.status)) {
@@ -534,6 +762,16 @@ window.AURA_CONNECT = function(options) {
    actionsWrap.append(...existingButtons);
    el.append(actionsWrap);
   });
+
+  if (dayHasFinance && !showDeletedAppointments) {
+   const agendaListEl = $('#agendaList');
+   if (agendaListEl) {
+    const summary = document.createElement('div');
+    summary.className = 'agenda-day-summary';
+    summary.innerHTML = `<div><small>Total do dia</small><b>${money(batch.fromCents(dayTotalCents))}</b></div><div><small>Recebido</small><b>${money(batch.fromCents(dayReceivedCents))}</b></div><div><small>Falta receber</small><b>${money(batch.fromCents(dayPendingCents))}</b></div>`;
+    agendaListEl.prepend(summary);
+   }
+  }
  };
 
  // Financeiro: recoverable exclusion and restoration of mistakenly recorded visits.

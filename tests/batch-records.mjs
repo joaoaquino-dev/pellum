@@ -4,11 +4,16 @@ import {
  buildAppointmentWhatsappURL,
  buildBatchCommit,
  canDeleteRecord,
+ computeDiscountFromFinal,
+ computeFinalFromDiscount,
+ formatDiscountSummary,
  groupRecordsByDate,
  joinAppointmentProcedures,
  reservedProductQty,
  resolveCollectorSlot,
+ resolveProcedurePrice,
  splitAppointmentProcedures,
+ summarizeAppointmentFinance,
  validateBatchStock
 } from '../standalone/src/batch-records.js';
 
@@ -178,5 +183,46 @@ assert.equal(delAllowed.hasMaterials, true);
 assert.equal(delAllowed.hasPayments, true);
 assert.equal(canDeleteRecord({ ...parentRec, deleted: true }, []).ok, false);
 
-console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, WhatsApp confirmation URL, record deletion guards, and patient history grouping.');
+// 9. Default procedure pricing (catalog priority, history fallback, unpriced)
+const historyRecords = [
+ { id: 'h1', patient: 'p1', date: '2026-10-01', procedure: 'Toxina botulínica', price: 900, discount: 0, received: 900, paid: true },
+ { id: 'h2', patient: 'p1', date: '2026-11-10', procedure: 'Toxina botulínica', price: 1100, discount: 100, received: 500, paid: false },
+ { id: 'h3', patient: 'p1', date: '2026-11-15', procedure: 'Toxina botulínica', price: 1500, discount: 0, deleted: true }
+];
+assert.deepEqual(resolveProcedurePrice('Toxina botulínica', { 'Toxina botulínica': 1250 }, historyRecords), { price: 1250, source: 'catalog' });
+assert.deepEqual(resolveProcedurePrice('Toxina botulínica', {}, historyRecords), { price: 1100, source: 'history' });
+assert.equal(resolveProcedurePrice('Peeling', {}, historyRecords), null);
+
+// 10. Discount <-> final price synchronization & summary
+assert.equal(computeFinalFromDiscount(1000, 150), 850);
+assert.equal(computeFinalFromDiscount(1000, 1500), 0);
+assert.deepEqual(computeDiscountFromFinal(1000, 850), { price: 1000, discount: 150, finalValue: 850 });
+assert.deepEqual(computeDiscountFromFinal(1000, 1200), { price: 1200, discount: 0, finalValue: 1200 });
+assert.deepEqual(formatDiscountSummary(1000, 150), { price: 1000, discount: 150, total: 850, percent: 15 });
+assert.equal(formatDiscountSummary(1000, 0), null);
+
+// 11. Appointment financial summary (estimated vs launched partial/paid)
+const estSummary = summarizeAppointmentFinance(
+ { id: 'a1', patient: 'p1', date: '2026-12-01', procedure: 'Toxina botulínica + Peeling' },
+ historyRecords,
+ { 'Toxina botulínica': 1200, Peeling: 350 }
+);
+assert.equal(estSummary.launched, false);
+assert.equal(estSummary.status, 'estimated');
+assert.equal(estSummary.estimatedTotal, 1550);
+assert.equal(estSummary.pricedCount, 2);
+
+const partialSummary = summarizeAppointmentFinance(
+ { id: 'a2', patient: 'p1', date: '2026-11-10', procedure: 'Toxina botulínica' },
+ historyRecords,
+ { 'Toxina botulínica': 1200 }
+);
+assert.equal(partialSummary.launched, true);
+assert.equal(partialSummary.status, 'partial');
+assert.equal(partialSummary.total, 1000);
+assert.equal(partialSummary.discount, 100);
+assert.equal(partialSummary.received, 500);
+assert.equal(partialSummary.pending, 500);
+
+console.log('PASS: batch records allocation, accumulated stock validation, mixed solo/partnership commit, agenda procedure joining, WhatsApp confirmation URL, record deletion guards, default prices, discounts, agenda finance summary, and patient history grouping.');
 
