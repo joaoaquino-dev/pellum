@@ -1,0 +1,64 @@
+name: Standalone CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: standalone/package-lock.json
+
+      - name: Install standalone dependencies
+        run: npm ci --prefix standalone --workspaces=false
+
+      - name: Build standalone app
+        run: npm --prefix standalone run build
+
+      - name: Syntax checks
+        run: |
+          npm --prefix standalone run check
+          node --check public/aura/app.js
+          node --check public/aura/features.js
+
+      - name: Run standalone unit and deployment checks
+        run: |
+          set -e
+          for test_file in \
+            tests/access-notice.mjs \
+            tests/account-navigation.mjs \
+            tests/action-feedback.mjs \
+            tests/batch-records.mjs \
+            tests/build-environment.mjs \
+            tests/clinic-alerts.mjs \
+            tests/clinical-document.mjs \
+            tests/clinical-model.mjs \
+            tests/clinical-recovery-stream.mjs \
+            tests/cloud-error.mjs \
+            tests/database-backup.mjs \
+            tests/panel-renderer.mjs \
+            tests/password-recovery.mjs \
+            tests/phone.mjs \
+            tests/portable-backup-key.mjs \
+            tests/products-ui.mjs \
+            tests/public-seo.mjs \
+            tests/security-actions.mjs \
+            tests/team-model.mjs \
+            security/assert-deployment.mjs; do
+            echo "Running $test_file"
+            node "$test_file"
+          done

@@ -14,6 +14,8 @@
   · <a href="https://www.instagram.com/usepellum/">Instagram</a>
 </p>
 
+> **English:** Pellum is a multi-tenant management platform for aesthetics professionals and clinics, covering scheduling, supply-based pricing, batch/expiry inventory, and financial payouts. Built with JavaScript, Supabase Auth, PostgreSQL (Row Level Security & transactional RPCs), and Vercel. Detailed documentation below is in Portuguese.
+
 ## Por que a Pellum existe
 
 Entre os atendimentos, uma profissional de estética precisa organizar horários, conferir materiais e entender quanto recebe depois dos custos. A Pellum reúne essas tarefas em um sistema para uso individual ou compartilhado entre profissionais.
@@ -88,7 +90,7 @@ Não execute migrations ou testes SQL automaticamente contra produção. Use dad
 
 ## Evidências e limites
 
-**Verificação desta preparação:** instalação standalone, build, 11 testes JavaScript, check de sintaxe e verificação de artefatos aprovados em Node 24/Linux. Consulte o [relatório final](docs/PUBLICATION_REVIEW.md). Capturas de tela novas não foram geradas: o navegador automatizado não iniciou neste ambiente. Não foram usados dados de pacientes para produzir imagens.
+**Verificação automatizada (CI):** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) executa instalação da versão independente, build, checagens de sintaxe, 19 scripts de teste unitários/standalone e validação do pacote estático em `ubuntu-latest` (Node 24) a cada push e Pull Request na `main`. Consulte também o [relatório de publicação](docs/PUBLICATION_REVIEW.md). Não foram usados dados reais de pacientes em testes ou materiais públicos.
 
 
 A [auditoria de 04/11](https://github.com/joaoaquino-dev/pellum/blob/main/docs/AUDIT-PRODUCTION-2026-11-04.md) registra 40 asserções SQL, 11 scripts JavaScript e as limitações daquela execução. O [relatório de interface](https://github.com/joaoaquino-dev/pellum/blob/main/docs/UI-UX-2026-11-05.md) distingue testes responsivos com dados fictícios e APIs simuladas de validação remota real.
